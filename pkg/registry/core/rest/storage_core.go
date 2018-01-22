@@ -89,13 +89,14 @@ type LegacyRESTStorage struct {
 	ServiceNodePortAllocator  rangeallocation.RangeRegistry
 }
 
-func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generic.RESTOptionsGetter) (LegacyRESTStorage, genericapiserver.APIGroupInfo, error) {
+func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(baseRestOptionsGetter generic.RESTOptionsGetter) (LegacyRESTStorage, genericapiserver.APIGroupInfo, error) {
+	negotiatedSerializer := legacyscheme.Codecs
 	apiGroupInfo := genericapiserver.APIGroupInfo{
 		GroupMeta:                    *legacyscheme.Registry.GroupOrDie(api.GroupName),
 		VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
 		Scheme:               legacyscheme.Scheme,
 		ParameterCodec:       legacyscheme.ParameterCodec,
-		NegotiatedSerializer: legacyscheme.Codecs,
+		NegotiatedSerializer: negotiatedSerializer,
 	}
 
 	var podDisruptionClient policyclient.PodDisruptionBudgetsGetter
@@ -107,6 +108,7 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 		}
 	}
 	restStorage := LegacyRESTStorage{}
+	restOptionsGetter := generic.NewRESTOptionsGetterWrapper(baseRestOptionsGetter, negotiatedSerializer)
 
 	podTemplateStorage := podtemplatestore.NewREST(restOptionsGetter)
 

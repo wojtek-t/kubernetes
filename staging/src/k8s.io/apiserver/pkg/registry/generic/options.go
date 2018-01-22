@@ -17,6 +17,7 @@ limitations under the License.
 package generic
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
@@ -30,6 +31,10 @@ type RESTOptions struct {
 	EnableGarbageCollection bool
 	DeleteCollectionWorkers int
 	ResourcePrefix          string
+
+	// ================================
+	// TODO: Add comments.
+	NegotiatedSerializer runtime.NegotiatedSerializer
 }
 
 // Implement RESTOptionsGetter so that RESTOptions can directly be used when available (i.e. tests)
@@ -46,4 +51,28 @@ type StoreOptions struct {
 	RESTOptions RESTOptionsGetter
 	TriggerFunc storage.TriggerPublisherFunc
 	AttrFunc    storage.AttrFunc
+}
+
+
+// TODO: Figure out if this belongs here
+// TODO: Add comment.
+type RESTOptionsGetterWrapper struct {
+	getter RESTOptionsGetter
+	ns     runtime.NegotiatedSerializer
+}
+
+func NewRESTOptionsGetterWrapper(g RESTOptionsGetter, ns runtime.NegotiatedSerializer) RESTOptionsGetter {
+	return &RESTOptionsGetterWrapper{
+		getter: g,
+		ns:     ns,
+	}
+}
+
+func (w *RESTOptionsGetterWrapper) GetRESTOptions(resource schema.GroupResource) (RESTOptions, error) {
+	options, err := w.getter.GetRESTOptions(resource)
+	if err != nil {
+		return RESTOptions{}, err
+	}
+	options.NegotiatedSerializer = w.ns
+	return options, nil
 }

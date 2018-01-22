@@ -1362,6 +1362,8 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 			e.NewListFunc,
 			attrFunc,
 			triggerFunc,
+			opts.NegotiatedSerializer,
+			// FIXME: Pass List of GroupVersions.
 		)
 	}
 
