@@ -34,7 +34,8 @@ type StorageDecorator func(
 	newListFunc func() runtime.Object,
 	getAttrsFunc storage.AttrFunc,
 	trigger storage.TriggerPublisherFunc,
-	negotiatedSerializer runtime.NegotiatedSerializer) (storage.Interface, factory.DestroyFunc)
+	negotiatedSerializer runtime.NegotiatedSerializer,
+	serializationSchemas []*runtime.SerializationScheme) (storage.Interface, factory.DestroyFunc)
 
 // UndecoratedStorage returns the given a new storage from the given config
 // without any decoration.
@@ -46,7 +47,8 @@ func UndecoratedStorage(
 	_ func() runtime.Object,
 	_ storage.AttrFunc,
 	_ storage.TriggerPublisherFunc,
-	_ runtime.NegotiatedSerializer) (storage.Interface, factory.DestroyFunc) {
+	_ runtime.NegotiatedSerializer,
+	_ []*runtime.SerializationScheme) (storage.Interface, factory.DestroyFunc) {
 	return NewRawStorage(config)
 }
 

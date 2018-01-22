@@ -133,12 +133,19 @@ type watchCache struct {
 
 	// for testing timeouts.
 	clock clock.Clock
+
+	// ===============================
+	// FIXME:
+	negotiatedSerializer runtime.NegotiatedSerializer
+	serializationSchemas []*runtime.SerializationScheme
 }
 
 func newWatchCache(
 	capacity int,
 	keyFunc func(runtime.Object) (string, error),
-	getAttrsFunc func(runtime.Object) (labels.Set, fields.Set, bool, error)) *watchCache {
+	getAttrsFunc func(runtime.Object) (labels.Set, fields.Set, bool, error),
+	negotiatedSerializer runtime.NegotiatedSerializer,
+	serializationSchemas []*runtime.SerializationScheme) *watchCache {
 	wc := &watchCache{
 		capacity:        capacity,
 		keyFunc:         keyFunc,
@@ -149,6 +156,8 @@ func newWatchCache(
 		store:           cache.NewStore(storeElementKey),
 		resourceVersion: 0,
 		clock:           clock.RealClock{},
+		negotiatedSerializer: negotiatedSerializer,
+		serializationSchemas: serializationSchemas,
 	}
 	wc.cond = sync.NewCond(wc.RLocker())
 	return wc

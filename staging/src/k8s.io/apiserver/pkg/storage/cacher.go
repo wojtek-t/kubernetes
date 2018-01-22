@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -79,7 +78,7 @@ type CacherConfig struct {
 	// =============================
 	// TODO: Add comments.
 	NegotiatedSerializer runtime.NegotiatedSerializer
-	GVs                  []schema.GroupVersion
+	SerializationSchemas []*runtime.SerializationScheme
 }
 
 type watchersMap map[int]*cacheWatcher
@@ -198,12 +197,14 @@ type Cacher struct {
 // its internal cache and updating its cache in the background based on the
 // given configuration.
 func NewCacherFromConfig(config CacherConfig) *Cacher {
-	if len(config.GVs) > 0 && config.NegotiatedSerializer == nil {
+	if len(config.SerializationSchemas) > 0 && config.NegotiatedSerializer == nil {
 		// TODO: Proper handling.
 		panic("NegotiatedSerializer has to be set")
 	}
 
-	watchCache := newWatchCache(config.CacheCapacity, config.KeyFunc, config.GetAttrsFunc)
+	watchCache := newWatchCache(
+		config.CacheCapacity, config.KeyFunc, config.GetAttrsFunc,
+		config.NegotiatedSerializer, config.SerializationSchemas)
 	listerWatcher := newCacherListerWatcher(config.Storage, config.ResourcePrefix, config.NewListFunc)
 	reflectorName := "storage/cacher.go:" + config.ResourcePrefix
 

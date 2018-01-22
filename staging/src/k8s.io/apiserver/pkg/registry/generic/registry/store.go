@@ -173,6 +173,10 @@ type Store struct {
 	Storage storage.Interface
 	// Called to cleanup clients used by the underlying Storage; optional.
 	DestroyFunc func()
+
+	// ===================================
+	// TODO: Figure out if this belongs here.
+	PreserializedForWatch []*runtime.SerializationScheme
 }
 
 // Note: the rest.StandardStorage interface aggregates the common REST verbs
@@ -1363,7 +1367,7 @@ func (e *Store) CompleteWithOptions(options *generic.StoreOptions) error {
 			attrFunc,
 			triggerFunc,
 			opts.NegotiatedSerializer,
-			// FIXME: Pass List of GroupVersions.
+			e.PreserializedForWatch,
 		)
 	}
 

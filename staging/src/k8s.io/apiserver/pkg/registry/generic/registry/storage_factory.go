@@ -39,7 +39,8 @@ func StorageWithCacher(capacity int) generic.StorageDecorator {
 		newListFunc func() runtime.Object,
 		getAttrsFunc storage.AttrFunc,
 		triggerFunc storage.TriggerPublisherFunc,
-		negotiatedSerializer runtime.NegotiatedSerializer) (storage.Interface, factory.DestroyFunc) {
+		negotiatedSerializer runtime.NegotiatedSerializer,
+		serializationSchemas []*runtime.SerializationScheme) (storage.Interface, factory.DestroyFunc) {
 
 		s, d := generic.NewRawStorage(storageConfig)
 		if capacity == 0 {
@@ -62,6 +63,7 @@ func StorageWithCacher(capacity int) generic.StorageDecorator {
 			TriggerPublisherFunc: triggerFunc,
 			Codec:                storageConfig.Codec,
 			NegotiatedSerializer: negotiatedSerializer,
+			SerializationSchemas: serializationSchemas,
 		}
 		cacher := storage.NewCacherFromConfig(cacherConfig)
 		destroyFunc := func() {
