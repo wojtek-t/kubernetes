@@ -169,6 +169,15 @@ func (c *codec) Encode(obj runtime.Object, w io.Writer) error {
 	switch obj.(type) {
 	case *runtime.Unknown, runtime.Unstructured:
 		return c.encoder.Encode(obj, w)
+	case *runtime.PreserializedObject:
+		// FIXME: It should do the following:
+		// 1) Filter out the ones that for a different version.
+		// 2) Ensure that we never get into the first if in that case.
+		// 3) Ensure that it's not NestedObjectEncoder
+		// 4) Call encoder (we should change encoders so that for PreserializedObject
+		//    we only go over serialized and if any of those are matching, we return
+		//    some dedicated error.
+		// 5) If we return this error, proceed with obj.Object.
 	}
 
 	gvks, isUnversioned, err := c.typer.ObjectKinds(obj)
