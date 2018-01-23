@@ -891,6 +891,10 @@ func (c *cacheWatcher) add(event *watchCacheEvent, budget *timeBudget) {
 
 // NOTE: sendWatchCacheEvent is assumed to not modify <event> !!!
 func (c *cacheWatcher) sendWatchCacheEvent(event *watchCacheEvent) {
+	if po, ok := event.Object.(*runtime.PreserializedObject); ok {
+		glog.Errorf("QQQ: preserialized")
+	}
+
 	curObjPasses := event.Type != watch.Deleted && c.filter(event.Key, event.ObjLabels, event.ObjFields, event.ObjUninitialized)
 	oldObjPasses := false
 	if event.PrevObject != nil {
@@ -904,9 +908,15 @@ func (c *cacheWatcher) sendWatchCacheEvent(event *watchCacheEvent) {
 	var watchEvent watch.Event
 	switch {
 	case curObjPasses && !oldObjPasses:
+		if po, ok := event.Object.(*runtime.PreserializedObject); ok {
+			glog.Errorf("EEE send add")
+		}
 		// FIXME: Perform DeepCopy only if this isn't the partially-serialized object.
 		watchEvent = watch.Event{Type: watch.Added, Object: event.Object.DeepCopyObject()}
 	case curObjPasses && oldObjPasses:
+		if po, ok := event.Object.(*runtime.PreserializedObject); ok {
+			glog.Errorf("EEE send modify")
+		}
 		// FIXME: Perform DeepCopy only if this isn't the partially-serialized object.
 		watchEvent = watch.Event{Type: watch.Modified, Object: event.Object.DeepCopyObject()}
 	case !curObjPasses && oldObjPasses:

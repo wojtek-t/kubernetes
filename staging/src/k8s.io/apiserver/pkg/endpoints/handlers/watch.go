@@ -201,6 +201,11 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 
 			obj := event.Object
+			if po, ok := obj.(*runtime.PreserializedObject); ok {
+				glog.Errorf("RRR: will send watch with PO")
+			}
+
+			// FIXME: Self links seem to be unset in what we send !!!
 			s.Fixup(obj)
 			if err := s.EmbeddedEncoder.Encode(obj, buf); err != nil {
 				// unexpected error
