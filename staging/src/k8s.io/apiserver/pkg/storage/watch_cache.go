@@ -17,6 +17,7 @@ limitations under the License.
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -85,6 +86,12 @@ type watchCacheElement struct {
 	watchCacheEvent *watchCacheEvent
 }
 
+// FIXME: Comment.
+type encoderForSchema struct {
+	schema  *runtime.SerializationScheme
+	encoder runtime.Encoder
+}
+
 // watchCache implements a Store interface.
 // However, it depends on the elements implementing runtime.Object interface.
 //
@@ -136,8 +143,7 @@ type watchCache struct {
 
 	// ===============================
 	// FIXME:
-	negotiatedSerializer runtime.NegotiatedSerializer
-	serializationSchemas []*runtime.SerializationScheme
+	encoders []*encoderForSchema
 }
 
 func newWatchCache(
@@ -146,6 +152,20 @@ func newWatchCache(
 	getAttrsFunc func(runtime.Object) (labels.Set, fields.Set, bool, error),
 	negotiatedSerializer runtime.NegotiatedSerializer,
 	serializationSchemas []*runtime.SerializationScheme) *watchCache {
+	// FIXME: Extract to separate function.
+	encoders := []*encoderForSchema{}
+	for _, schema := range serializationSchemas {
+		for _, info := range negotiatedSerializer.SupportedMediaTypes() {
+			if schema.MediaType == info.MediaType {
+				encoders = append(encoders, &encoderForSchema{
+					schema:  schema,
+					encoder: negotiatedSerializer.EncoderForVersion(info.Serializer, schema.GV),
+				})
+				break
+			}
+		}
+	}
+
 	wc := &watchCache{
 		capacity:        capacity,
 		keyFunc:         keyFunc,
@@ -156,8 +176,7 @@ func newWatchCache(
 		store:           cache.NewStore(storeElementKey),
 		resourceVersion: 0,
 		clock:           clock.RealClock{},
-		negotiatedSerializer: negotiatedSerializer,
-		serializationSchemas: serializationSchemas,
+		encoders:        encoders,
 	}
 	wc.cond = sync.NewCond(wc.RLocker())
 	return wc
@@ -230,6 +249,29 @@ func (w *watchCache) processEvent(event watch.Event, resourceVersion uint64, upd
 	}
 	elem := &storeElement{Key: key, Object: event.Object}
 
+	// ========================
+	// FIXME:
+	var serializedObject []runtime.SerializedObject
+	// TODO: We should reuse buffer over different events.
+	writer := &bytes.Buffer{}
+	for _, encoder := range w.encoders {
+		if err := encoder.encoder.Encode(event.Object, writer); err == nil {
+			serializedObject = append(serializedObject, runtime.SerializedObject{
+				Raw: writer.Bytes(),
+				Scheme: encoder.schema,
+			})
+			writer.Reset()
+		}
+	}
+	currObject := event.Object
+	if len(serializedObject) > 0 {
+		currObject = &runtime.PreserializedObject{
+			Object: event.Object,
+			Serialized: serializedObject,
+		}
+	}
+	// ========================
+
 	// TODO: We should consider moving this lock below after the watchCacheEvent
 	// is created. In such situation, the only problematic scenario is Replace(
 	// happening after getting object from store and before acquiring a lock.
@@ -257,7 +299,7 @@ func (w *watchCache) processEvent(event watch.Event, resourceVersion uint64, upd
 	}
 	watchCacheEvent := &watchCacheEvent{
 		Type:                 event.Type,
-		Object:               event.Object,
+		Object:               currObject,
 		ObjLabels:            objLabels,
 		ObjFields:            objFields,
 		ObjUninitialized:     objUninitialized,

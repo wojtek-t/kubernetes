@@ -16,6 +16,10 @@ limitations under the License.
 
 package runtime
 
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
 // Note that the types provided in this file are not versioned and are intended to be
 // safe to use from within all versions of every API object.
 
@@ -121,6 +125,28 @@ type Unknown struct {
 	// ContentType  is serialization method used to serialize 'Raw'.
 	// Unspecified means ContentTypeJSON.
 	ContentType string `protobuf:"bytes,4,opt,name=contentType"`
+}
+
+// FIXME: Comment.
+// +k8s:deepcopy-gen=true
+type SerializedObject struct {
+	Raw    []byte
+	Scheme *SerializationScheme
+}
+
+// FIXME: Partially serialized object.
+// FIXME: Add comment.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+type PreserializedObject struct {
+	// TODO: Comment.
+	Object Object
+	// TODO: Comment.
+	Serialized []SerializedObject
+}
+
+func (o *PreserializedObject) GetObjectKind() schema.ObjectKind {
+	return o.Object.GetObjectKind()
 }
 
 // VersionedObjects is used by Decoders to give callers a way to access all versions
