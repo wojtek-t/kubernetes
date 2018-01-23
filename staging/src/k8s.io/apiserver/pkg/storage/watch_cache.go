@@ -257,6 +257,7 @@ func (w *watchCache) processEvent(event watch.Event, resourceVersion uint64, upd
 	// TODO: We should reuse buffer over different events.
 	writer := &bytes.Buffer{}
 	for _, encoder := range w.encoders {
+		// FIXME: Shouldn't we do a DeepCopy here?
 		if err := encoder.encoder.Encode(event.Object, writer); err == nil {
 			serializedObject = append(serializedObject, runtime.SerializedObject{
 				Raw: writer.Bytes(),

@@ -28,6 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/recognizer"
 	"k8s.io/apimachinery/pkg/util/framer"
+
+	"github.com/golang/glog"
 )
 
 var (
@@ -406,10 +408,10 @@ func unmarshalToObject(typer runtime.ObjectTyper, creater runtime.ObjectCreater,
 // Encode serializes the provided object to the given writer. Overrides is ignored.
 func (s *RawSerializer) Encode(obj runtime.Object, w io.Writer) error {
 	if po, ok := obj.(*runtime.PreserializedObject); ok {
-		log.Errorf("XXX: encoding preserialized object")
+		glog.Errorf("XXX: encoding preserialized object")
 		for _, serialized := range po.Serialized {
 			if  serialized.Scheme.MediaType == s.contentType {
-				log.Errorf("YYY: Found")
+				glog.Errorf("YYY: Found")
 				_, err := w.Write(serialized.Raw)
 				return err
 			}

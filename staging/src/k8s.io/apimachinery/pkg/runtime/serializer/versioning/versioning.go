@@ -21,6 +21,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/golang/glog"
 )
 
 // NewCodecForScheme is a convenience method for callers that are using a scheme.
@@ -170,8 +172,24 @@ func (c *codec) Encode(obj runtime.Object, w io.Writer) error {
 	case *runtime.Unknown, runtime.Unstructured:
 		return c.encoder.Encode(obj, w)
 	case *runtime.PreserializedObject:
+		po := obj.(*runtime.PreserializedObject)
 		// FIXME: It should do the following:
 		// 1) Filter out the ones that for a different version.
+		found := true
+		for _, serialized := range po.Serialized {
+			if serialized.Scheme.GV != c.encodeVersion {
+				glog.Errorf("FFF mismatch: %#v %#v", serialized.Scheme.GV, c.encodeVersion)
+				found = false
+			}
+		}
+		if found {
+			err := c.encoder.Encode(po, w)
+			if err == nil {
+				return nil
+			}
+		}
+		obj = po.Object
+		// FIXME:
 		// 2) Ensure that we never get into the first if in that case.
 		// 3) Ensure that it's not NestedObjectEncoder
 		// 4) Call encoder (we should change encoders so that for PreserializedObject
