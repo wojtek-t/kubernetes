@@ -171,6 +171,18 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 
 // Encode serializes the provided object to the given writer.
 func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
+	if po, ok := obj.(*runtime.PreserializedObject); ok {
+		glog.Errorf("XXX: encoding preserialized object")
+		for _, serialized := range po.Serialized {
+			if  serialized.Scheme.MediaType == s.contentType {
+				glog.Errorf("YYY: Found")
+				_, err := w.Write(serialized.Raw)
+				return err
+			}
+		}
+		return runtime.NewNoPreserializedErr();
+	}
+
 	prefixSize := uint64(len(s.prefix))
 
 	var unk runtime.Unknown

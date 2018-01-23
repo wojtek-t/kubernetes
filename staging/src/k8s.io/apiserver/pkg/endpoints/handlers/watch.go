@@ -202,7 +202,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 
 			obj := event.Object
-			if po, ok := obj.(*runtime.PreserializedObject); ok {
+			if _, ok := obj.(*runtime.PreserializedObject); ok {
 				glog.Errorf("RRR: will send watch with PO")
 			}
 
