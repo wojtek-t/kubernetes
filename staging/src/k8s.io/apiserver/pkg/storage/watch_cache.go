@@ -33,6 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	utiltrace "k8s.io/apiserver/pkg/util/trace"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -156,9 +158,9 @@ func newWatchCache(
 	encoders := []*encoderForSchema{}
 	for _, schema := range serializationSchemas {
 		for _, info := range negotiatedSerializer.SupportedMediaTypes() {
-			log.Errorf("AAA: media type: %s", info.MediaType)
+			glog.Errorf("AAA: media type: %s", info.MediaType)
 			if schema.MediaType == info.MediaType {
-				log.Errorf("BBB: appending for %s", info.MediaType)
+				glog.Errorf("BBB: appending for %s", info.MediaType)
 				encoders = append(encoders, &encoderForSchema{
 					schema:  schema,
 					encoder: negotiatedSerializer.EncoderForVersion(info.Serializer, schema.GV),
@@ -268,7 +270,7 @@ func (w *watchCache) processEvent(event watch.Event, resourceVersion uint64, upd
 	}
 	currObject := event.Object
 	if len(serializedObject) > 0 {
-		log.Errorf("Serialized with %d", len(serializedObject))
+		glog.Errorf("CCC: Serialized with %d", len(serializedObject))
 		currObject = &runtime.PreserializedObject{
 			Object: event.Object,
 			Serialized: serializedObject,
