@@ -35,6 +35,7 @@ import (
 	"k8s.io/apiserver/pkg/util/wsstream"
 
 	"golang.org/x/net/websocket"
+	"github.com/golang/glog"
 )
 
 // nothing will ever be sent down this channel
