@@ -111,3 +111,25 @@ func IsMissingVersion(err error) bool {
 	_, ok := err.(*missingVersionErr)
 	return ok
 }
+
+// ==========================================
+// FIXME:
+
+type noPreserializedErr struct {
+}
+
+func NewNoPreserializedErr() error {
+	return &noPreserializedErr{}
+}
+
+func (k *noPreserializedErr) Error() string {
+	return fmt.Sprintf("FIXME")
+}
+
+func IsNoPreserializedErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	_, ok := err.(*noPreserializedErr)
+	return ok
+}

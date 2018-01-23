@@ -405,6 +405,16 @@ func unmarshalToObject(typer runtime.ObjectTyper, creater runtime.ObjectCreater,
 
 // Encode serializes the provided object to the given writer. Overrides is ignored.
 func (s *RawSerializer) Encode(obj runtime.Object, w io.Writer) error {
+	if po, ok := obj.(*runtime.PreserializedObject); ok {
+		for _, serialized := range po.Serialized {
+			if  serialized.Scheme.MediaType == s.contentType {
+				_, err := w.Write(serialized.Raw)
+				return err
+			}
+		}
+		return runtime.NewNoPreserializedErr();
+	}
+
 	switch t := obj.(type) {
 	case bufferedMarshaller:
 		// this path performs a single allocation during write but requires the caller to implement

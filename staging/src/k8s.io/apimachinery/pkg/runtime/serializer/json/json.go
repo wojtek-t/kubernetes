@@ -194,6 +194,19 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 
 // Encode serializes the provided object to the given writer.
 func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
+	if po, ok := obj.(*runtime.PreserializedObject); ok {
+		if s.yaml || s.pretty {
+			return runtime.NewNoPreserializedErr()
+		}
+		for _, serialized := range po.Serialized {
+			if  serialized.Scheme.MediaType == runtime.ContentTypeJSON {
+				_, err := w.Write(serialized.Raw)
+				return err
+			}
+		}
+		return runtime.NewNoPreserializedErr();
+	}
+
 	if s.yaml {
 		json, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(obj)
 		if err != nil {
@@ -215,6 +228,7 @@ func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 		_, err = w.Write(data)
 		return err
 	}
+
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(obj)
 }
