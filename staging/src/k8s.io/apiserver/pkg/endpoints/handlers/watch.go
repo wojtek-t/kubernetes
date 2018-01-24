@@ -35,7 +35,6 @@ import (
 	"k8s.io/apiserver/pkg/util/wsstream"
 
 	"golang.org/x/net/websocket"
-	"github.com/golang/glog"
 )
 
 // nothing will ever be sent down this channel
@@ -202,9 +201,6 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 
 			obj := event.Object
-			if _, ok := obj.(*runtime.PreserializedObject); ok {
-				glog.Errorf("RRR: will send watch with PO")
-			}
 
 			// FIXME: Self links seem to be unset in what we send !!!
 			s.Fixup(obj)

@@ -33,8 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	utiltrace "k8s.io/apiserver/pkg/util/trace"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/golang/glog"
 )
 
 const (
@@ -146,6 +144,7 @@ type watchCache struct {
 	// ===============================
 	// FIXME:
 	encoders []*encoderForSchema
+	buffer   *bytes.Buffer
 }
 
 func newWatchCache(
@@ -158,9 +157,7 @@ func newWatchCache(
 	encoders := []*encoderForSchema{}
 	for _, schema := range serializationSchemas {
 		for _, info := range negotiatedSerializer.SupportedMediaTypes() {
-			glog.Errorf("AAA: media type: %s", info.MediaType)
 			if schema.MediaType == info.MediaType {
-				glog.Errorf("BBB: appending for %s", info.MediaType)
 				encoders = append(encoders, &encoderForSchema{
 					schema:  schema,
 					encoder: negotiatedSerializer.EncoderForVersion(info.Serializer, schema.GV),
@@ -181,6 +178,7 @@ func newWatchCache(
 		resourceVersion: 0,
 		clock:           clock.RealClock{},
 		encoders:        encoders,
+		buffer:          &bytes.Buffer{},
 	}
 	wc.cond = sync.NewCond(wc.RLocker())
 	return wc
@@ -256,21 +254,17 @@ func (w *watchCache) processEvent(event watch.Event, resourceVersion uint64, upd
 	// ========================
 	// FIXME:
 	var serializedObject []runtime.SerializedObject
-	// TODO: We should reuse buffer over different events.
-	writer := &bytes.Buffer{}
 	for _, encoder := range w.encoders {
-		// FIXME: Shouldn't we do a DeepCopy here?
-		if err := encoder.encoder.Encode(event.Object, writer); err == nil {
+		if err := encoder.encoder.Encode(event.Object.DeepCopyObject(), w.buffer); err == nil {
 			serializedObject = append(serializedObject, runtime.SerializedObject{
-				Raw: writer.Bytes(),
+				Raw: w.buffer.Bytes(),
 				Scheme: encoder.schema,
 			})
-			writer.Reset()
+			w.buffer.Reset()
 		}
 	}
 	currObject := event.Object
 	if len(serializedObject) > 0 {
-		glog.Errorf("CCC: Serialized with %d", len(serializedObject))
 		currObject = &runtime.PreserializedObject{
 			Object: event.Object,
 			Serialized: serializedObject,

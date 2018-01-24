@@ -21,8 +21,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/golang/glog"
 )
 
 // NewCodecForScheme is a convenience method for callers that are using a scheme.
@@ -178,7 +176,6 @@ func (c *codec) Encode(obj runtime.Object, w io.Writer) error {
 		found := true
 		for _, serialized := range po.Serialized {
 			if serialized.Scheme.GV != c.encodeVersion {
-				glog.Errorf("FFF mismatch: %#v %#v", serialized.Scheme.GV, c.encodeVersion)
 				found = false
 			}
 		}
@@ -188,7 +185,8 @@ func (c *codec) Encode(obj runtime.Object, w io.Writer) error {
 				return nil
 			}
 		}
-		obj = po.Object
+		// We need to do that, because we didn't do copy before.
+		obj = po.Object.DeepCopyObject()
 		// FIXME:
 		// 2) Ensure that we never get into the first if in that case.
 		// 3) Ensure that it's not NestedObjectEncoder

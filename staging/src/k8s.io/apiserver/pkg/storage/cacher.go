@@ -891,10 +891,6 @@ func (c *cacheWatcher) add(event *watchCacheEvent, budget *timeBudget) {
 
 // NOTE: sendWatchCacheEvent is assumed to not modify <event> !!!
 func (c *cacheWatcher) sendWatchCacheEvent(event *watchCacheEvent) {
-	if _, ok := event.Object.(*runtime.PreserializedObject); ok {
-		glog.Errorf("QQQ: preserialized")
-	}
-
 	curObjPasses := event.Type != watch.Deleted && c.filter(event.Key, event.ObjLabels, event.ObjFields, event.ObjUninitialized)
 	oldObjPasses := false
 	if event.PrevObject != nil {
@@ -908,24 +904,27 @@ func (c *cacheWatcher) sendWatchCacheEvent(event *watchCacheEvent) {
 	var watchEvent watch.Event
 	switch {
 	case curObjPasses && !oldObjPasses:
+		watchEvent.Type = watch.Added
 		if _, ok := event.Object.(*runtime.PreserializedObject); ok {
-			glog.Errorf("EEE send add")
+			watchEvent.Object = event.Object
+		} else {
+			watchEvent.Object = event.Object.DeepCopyObject()
 		}
-		// FIXME: Perform DeepCopy only if this isn't the partially-serialized object.
-		watchEvent = watch.Event{Type: watch.Added, Object: event.Object.DeepCopyObject()}
 	case curObjPasses && oldObjPasses:
+		watchEvent.Type = watch.Modified
 		if _, ok := event.Object.(*runtime.PreserializedObject); ok {
-			glog.Errorf("EEE send modify")
+			watchEvent.Object = event.Object
+		} else {
+			watchEvent.Object = event.Object.DeepCopyObject()
 		}
-		// FIXME: Perform DeepCopy only if this isn't the partially-serialized object.
-		watchEvent = watch.Event{Type: watch.Modified, Object: event.Object.DeepCopyObject()}
 	case !curObjPasses && oldObjPasses:
+		watchEvent.Type = watch.Deleted
 		// return a delete event with the previous object content, but with the event's resource version
 		oldObj := event.PrevObject.DeepCopyObject()
 		if err := c.versioner.UpdateObject(oldObj, event.ResourceVersion); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failure to version api object (%d) %#v: %v", event.ResourceVersion, oldObj, err))
 		}
-		watchEvent = watch.Event{Type: watch.Deleted, Object: oldObj}
+		watchEvent.Object = oldObj
 	}
 
 	// We need to ensure that if we put event X to the c.result, all

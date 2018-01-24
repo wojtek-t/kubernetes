@@ -30,8 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/recognizer"
 	"k8s.io/apimachinery/pkg/util/framer"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/golang/glog"
 )
 
 // NewSerializer creates a JSON serializer that handles encoding versioned objects into the proper JSON form. If typer
@@ -197,18 +195,15 @@ func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, i
 // Encode serializes the provided object to the given writer.
 func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 	if po, ok := obj.(*runtime.PreserializedObject); ok {
-		glog.Errorf("GGG: preserialized")
 		if s.yaml || s.pretty {
 			return runtime.NewNoPreserializedErr()
 		}
 		for _, serialized := range po.Serialized {
 			if  serialized.Scheme.MediaType == runtime.ContentTypeJSON {
-				glog.Errorf("HHH: running")
 				_, err := w.Write(serialized.Raw)
 				return err
 			}
 		}
-		glog.Errorf("III: not found")
 		return runtime.NewNoPreserializedErr();
 	}
 
@@ -233,7 +228,6 @@ func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 		_, err = w.Write(data)
 		return err
 	}
-
 	encoder := json.NewEncoder(w)
 	return encoder.Encode(obj)
 }
