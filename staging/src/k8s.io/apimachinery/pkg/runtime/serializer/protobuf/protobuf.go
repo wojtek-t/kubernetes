@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/recognizer"
 	"k8s.io/apimachinery/pkg/util/framer"
 
-	"github.com/golang/glog"
+//	"github.com/golang/glog"
 )
 
 var (
@@ -174,7 +174,7 @@ func (s *Serializer) Encode(obj runtime.Object, w io.Writer) error {
 	if po, ok := obj.(*runtime.PreserializedObject); ok {
 		for _, serialized := range po.Serialized {
 			if  serialized.Scheme.MediaType == s.contentType {
-				glog.Errorf("AAA done")
+				//glog.Errorf("AAA done")
 				_, err := w.Write(serialized.Raw)
 				return err
 			}
