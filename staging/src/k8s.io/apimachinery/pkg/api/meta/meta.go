@@ -130,6 +130,7 @@ func AsPartialObjectMetadata(m metav1.Object) *metav1beta1.PartialObjectMetadata
 				ResourceVersion:            m.GetResourceVersion(),
 				Generation:                 m.GetGeneration(),
 				CreationTimestamp:          m.GetCreationTimestamp(),
+				LastUpdateTimestamp:        m.GetLastUpdateTimestamp(),
 				DeletionTimestamp:          m.GetDeletionTimestamp(),
 				DeletionGracePeriodSeconds: m.GetDeletionGracePeriodSeconds(),
 				Labels:          m.GetLabels(),
@@ -446,20 +447,21 @@ func setOwnerReference(v reflect.Value, o *metav1.OwnerReference) error {
 // genericAccessor contains pointers to strings that can modify an arbitrary
 // struct and implements the Accessor interface.
 type genericAccessor struct {
-	namespace         *string
-	name              *string
-	generateName      *string
-	uid               *types.UID
-	apiVersion        *string
-	kind              *string
-	resourceVersion   *string
-	selfLink          *string
-	creationTimestamp *metav1.Time
-	deletionTimestamp **metav1.Time
-	labels            *map[string]string
-	annotations       *map[string]string
-	ownerReferences   reflect.Value
-	finalizers        *[]string
+	namespace           *string
+	name                *string
+	generateName        *string
+	uid                 *types.UID
+	apiVersion          *string
+	kind                *string
+	resourceVersion     *string
+	selfLink            *string
+	creationTimestamp   *metav1.Time
+	lastUpdateTimestamp *metav1.Time
+	deletionTimestamp   **metav1.Time
+	labels              *map[string]string
+	annotations         *map[string]string
+	ownerReferences     reflect.Value
+	finalizers          *[]string
 }
 
 func (a genericAccessor) GetNamespace() string {
@@ -556,6 +558,14 @@ func (a genericAccessor) GetCreationTimestamp() metav1.Time {
 
 func (a genericAccessor) SetCreationTimestamp(timestamp metav1.Time) {
 	*a.creationTimestamp = timestamp
+}
+
+func (a genericAccessor) GetLastUpdateTimestamp() metav1.Time {
+	return *a.lastUpdateTimestamp
+}
+
+func (a genericAccessor) SetLastUpdateTimestamp(timestamp metav1.Time) {
+	*a.lastUpdateTimestamp = timestamp
 }
 
 func (a genericAccessor) GetDeletionTimestamp() *metav1.Time {

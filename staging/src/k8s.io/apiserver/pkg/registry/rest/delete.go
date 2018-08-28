@@ -86,6 +86,8 @@ func BeforeDelete(strategy RESTDeleteStrategy, ctx context.Context, obj runtime.
 		// the obcject before deleting it.
 		return false, false, nil
 	}
+	// FIXME: Figure out how/when exactly to set lastUpdateTimestamp.
+
 	// if the object is already being deleted, no need to update generation.
 	if objectMeta.GetDeletionTimestamp() != nil {
 		// if we are already being deleted, we may only shorten the deletion grace period

@@ -743,6 +743,7 @@ func TestGetMultipleTypeObjectsAsList(t *testing.T) {
             "kind": "Pod",
             "metadata": {
                 "creationTimestamp": null,
+                "lastUpdateTimestamp": null,
                 "name": "foo",
                 "namespace": "test",
                 "resourceVersion": "10"
@@ -761,6 +762,7 @@ func TestGetMultipleTypeObjectsAsList(t *testing.T) {
             "kind": "Pod",
             "metadata": {
                 "creationTimestamp": null,
+                "lastUpdateTimestamp": null,
                 "name": "bar",
                 "namespace": "test",
                 "resourceVersion": "11"
@@ -779,6 +781,7 @@ func TestGetMultipleTypeObjectsAsList(t *testing.T) {
             "kind": "Service",
             "metadata": {
                 "creationTimestamp": null,
+                "lastUpdateTimestamp": null,
                 "name": "baz",
                 "namespace": "test",
                 "resourceVersion": "12"

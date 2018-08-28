@@ -47,6 +47,8 @@ type Object interface {
 	SetSelfLink(selfLink string)
 	GetCreationTimestamp() Time
 	SetCreationTimestamp(timestamp Time)
+	GetLastUpdateTimestamp() Time
+	SetLastUpdateTimestamp(timestamp Time)
 	GetDeletionTimestamp() *Time
 	SetDeletionTimestamp(timestamp *Time)
 	GetDeletionGracePeriodSeconds() *int64
@@ -145,6 +147,10 @@ func (meta *ObjectMeta) SetSelfLink(selfLink string)         { meta.SelfLink = s
 func (meta *ObjectMeta) GetCreationTimestamp() Time          { return meta.CreationTimestamp }
 func (meta *ObjectMeta) SetCreationTimestamp(creationTimestamp Time) {
 	meta.CreationTimestamp = creationTimestamp
+}
+func (meta *ObjectMeta) GetLastUpdateTimestamp() Time        { return meta.LastUpdateTimestamp }
+func (meta *ObjectMeta) SetLastUpdateTimestamp(lastUpdateTimestamp Time) {
+	meta.LastUpdateTimestamp = lastUpdateTimestamp
 }
 func (meta *ObjectMeta) GetDeletionTimestamp() *Time { return meta.DeletionTimestamp }
 func (meta *ObjectMeta) SetDeletionTimestamp(deletionTimestamp *Time) {

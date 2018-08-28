@@ -8,6 +8,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:attachdetach-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -25,6 +26,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:certificate-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -42,6 +44,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:clusterrole-aggregation-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -59,6 +62,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:cronjob-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -76,6 +80,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:daemon-set-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -93,6 +98,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:deployment-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -110,6 +116,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:disruption-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -127,6 +134,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:endpoint-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -144,6 +152,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:expand-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -161,6 +170,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:generic-garbage-collector
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -178,6 +188,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:horizontal-pod-autoscaler
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -195,6 +206,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:job-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -212,6 +224,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:namespace-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -229,6 +242,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:node-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -246,6 +260,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:persistent-volume-binder
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -263,6 +278,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pod-garbage-collector
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -280,6 +296,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pv-protection-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -297,6 +314,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pvc-protection-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -314,6 +332,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:replicaset-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -331,6 +350,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:replication-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -348,6 +368,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:resourcequota-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -365,6 +386,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:route-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -382,6 +404,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:service-account-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -399,6 +422,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:service-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -416,6 +440,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:statefulset-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io
@@ -433,6 +458,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:ttl-controller
   roleRef:
     apiGroup: rbac.authorization.k8s.io

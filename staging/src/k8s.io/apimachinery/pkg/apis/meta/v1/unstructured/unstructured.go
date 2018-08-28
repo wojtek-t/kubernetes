@@ -327,6 +327,21 @@ func (u *Unstructured) SetCreationTimestamp(timestamp metav1.Time) {
 	u.setNestedField(ts, "metadata", "creationTimestamp")
 }
 
+func (u *Unstructured) GetLastUpdateTimestamp() metav1.Time {
+	var timestamp metav1.Time
+	timestamp.UnmarshalQueryParameter(getNestedString(u.Object, "metadata", "lastUpdateTimestamp"))
+	return timestamp
+}
+
+func (u *Unstructured) SetLastUpdateTimestamp(timestamp metav1.Time) {
+	ts, _ := timestamp.MarshalQueryParameter()
+	if len(ts) == 0 || timestamp.Time.IsZero() {
+		RemoveNestedField(u.Object, "metadata", "lastUpdateTimestamp")
+		return
+	}
+	u.setNestedField(ts, "metadata", "lastUpdateTimestamp")
+}
+
 func (u *Unstructured) GetDeletionTimestamp() *metav1.Time {
 	var timestamp metav1.Time
 	timestamp.UnmarshalQueryParameter(getNestedString(u.Object, "metadata", "deletionTimestamp"))

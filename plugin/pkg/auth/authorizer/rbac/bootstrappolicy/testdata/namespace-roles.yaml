@@ -8,6 +8,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:bootstrap-signer
     namespace: kube-public
   rules:
@@ -43,6 +44,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: extension-apiserver-authentication-reader
     namespace: kube-system
   rules:
@@ -62,6 +64,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system::leader-locking-kube-controller-manager
     namespace: kube-system
   rules:
@@ -88,6 +91,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system::leader-locking-kube-scheduler
     namespace: kube-system
   rules:
@@ -114,6 +118,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:bootstrap-signer
     namespace: kube-system
   rules:
@@ -133,6 +138,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:cloud-provider
     namespace: kube-system
   rules:
@@ -153,6 +159,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:token-cleaner
     namespace: kube-system
   rules:

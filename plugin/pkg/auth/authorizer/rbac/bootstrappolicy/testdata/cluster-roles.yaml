@@ -12,6 +12,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: admin
   rules: null
 - apiVersion: rbac.authorization.k8s.io/v1
@@ -22,6 +23,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: cluster-admin
   rules:
   - apiGroups:
@@ -47,6 +49,7 @@ items:
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
       rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    lastUpdateTimestamp: null
     name: edit
   rules: null
 - apiVersion: rbac.authorization.k8s.io/v1
@@ -58,6 +61,7 @@ items:
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
       rbac.authorization.k8s.io/aggregate-to-admin: "true"
+    lastUpdateTimestamp: null
     name: system:aggregate-to-admin
   rules:
   - apiGroups:
@@ -89,6 +93,7 @@ items:
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
       rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    lastUpdateTimestamp: null
     name: system:aggregate-to-edit
   rules:
   - apiGroups:
@@ -227,6 +232,7 @@ items:
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
       rbac.authorization.k8s.io/aggregate-to-view: "true"
+    lastUpdateTimestamp: null
     name: system:aggregate-to-view
   rules:
   - apiGroups:
@@ -338,6 +344,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:auth-delegator
   rules:
   - apiGroups:
@@ -360,6 +367,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:aws-cloud-provider
   rules:
   - apiGroups:
@@ -385,6 +393,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:basic-user
   rules:
   - apiGroups:
@@ -402,6 +411,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:certificates.k8s.io:certificatesigningrequests:nodeclient
   rules:
   - apiGroups:
@@ -418,6 +428,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:certificates.k8s.io:certificatesigningrequests:selfnodeclient
   rules:
   - apiGroups:
@@ -434,6 +445,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:csi-external-attacher
   rules:
   - apiGroups:
@@ -483,6 +495,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:csi-external-provisioner
   rules:
   - apiGroups:
@@ -531,6 +544,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:discovery
   rules:
   - nonResourceURLs:
@@ -557,6 +571,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:heapster
   rules:
   - apiGroups:
@@ -586,6 +601,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:kube-aggregator
   rules:
   - apiGroups:
@@ -605,6 +621,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:kube-controller-manager
   rules:
   - apiGroups:
@@ -667,6 +684,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:kube-dns
   rules:
   - apiGroups:
@@ -685,6 +703,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:kube-scheduler
   rules:
   - apiGroups:
@@ -794,6 +813,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:kubelet-api-admin
   rules:
   - apiGroups:
@@ -828,6 +848,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:node
   rules:
   - apiGroups:
@@ -964,6 +985,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:node-bootstrapper
   rules:
   - apiGroups:
@@ -983,6 +1005,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:node-problem-detector
   rules:
   - apiGroups:
@@ -1013,6 +1036,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:node-proxier
   rules:
   - apiGroups:
@@ -1045,6 +1069,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:persistent-volume-provisioner
   rules:
   - apiGroups:
@@ -1096,6 +1121,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:volume-scheduler
   rules:
   - apiGroups:
@@ -1129,6 +1155,7 @@ items:
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
       rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    lastUpdateTimestamp: null
     name: view
   rules: null
 kind: List

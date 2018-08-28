@@ -124,6 +124,8 @@ func BeforeUpdate(strategy RESTUpdateStrategy, ctx context.Context, obj, old run
 	if oldCreationTime := oldMeta.GetCreationTimestamp(); !oldCreationTime.IsZero() {
 		objectMeta.SetCreationTimestamp(oldMeta.GetCreationTimestamp())
 	}
+	// set the current last update timestamp
+	objectMeta.SetLastUpdateTimestamp(metav1.Now())
 	// an update can never remove/change a deletion timestamp
 	if !oldMeta.GetDeletionTimestamp().IsZero() {
 		objectMeta.SetDeletionTimestamp(oldMeta.GetDeletionTimestamp())

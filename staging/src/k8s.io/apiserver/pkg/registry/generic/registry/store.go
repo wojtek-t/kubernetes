@@ -1229,6 +1229,7 @@ func exportObjectMeta(accessor metav1.Object, exact bool) {
 		accessor.SetNamespace("")
 	}
 	accessor.SetCreationTimestamp(metav1.Time{})
+	accessor.SetLastUpdateTimestamp(metav1.Time{})
 	accessor.SetDeletionTimestamp(nil)
 	accessor.SetResourceVersion("")
 	accessor.SetSelfLink("")

@@ -8,6 +8,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:attachdetach-controller
   rules:
   - apiGroups:
@@ -66,6 +67,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:certificate-controller
   rules:
   - apiGroups:
@@ -106,6 +108,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:clusterrole-aggregation-controller
   rules:
   - apiGroups:
@@ -126,6 +129,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:cronjob-controller
   rules:
   - apiGroups:
@@ -184,6 +188,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:daemon-set-controller
   rules:
   - apiGroups:
@@ -260,6 +265,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:deployment-controller
   rules:
   - apiGroups:
@@ -324,6 +330,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:disruption-controller
   rules:
   - apiGroups:
@@ -390,6 +397,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:endpoint-controller
   rules:
   - apiGroups:
@@ -433,6 +441,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:expand-controller
   rules:
   - apiGroups:
@@ -497,6 +506,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:generic-garbage-collector
   rules:
   - apiGroups:
@@ -526,6 +536,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:horizontal-pod-autoscaler
   rules:
   - apiGroups:
@@ -593,6 +604,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:job-controller
   rules:
   - apiGroups:
@@ -642,6 +654,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:namespace-controller
   rules:
   - apiGroups:
@@ -677,6 +690,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:node-controller
   rules:
   - apiGroups:
@@ -725,6 +739,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:persistent-volume-binder
   rules:
   - apiGroups:
@@ -821,6 +836,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pod-garbage-collector
   rules:
   - apiGroups:
@@ -845,6 +861,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pv-protection-controller
   rules:
   - apiGroups:
@@ -872,6 +889,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:pvc-protection-controller
   rules:
   - apiGroups:
@@ -907,6 +925,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:replicaset-controller
   rules:
   - apiGroups:
@@ -959,6 +978,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:replication-controller
   rules:
   - apiGroups:
@@ -1008,6 +1028,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:resourcequota-controller
   rules:
   - apiGroups:
@@ -1039,6 +1060,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:route-controller
   rules:
   - apiGroups:
@@ -1070,6 +1092,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:service-account-controller
   rules:
   - apiGroups:
@@ -1094,6 +1117,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:service-controller
   rules:
   - apiGroups:
@@ -1133,6 +1157,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:statefulset-controller
   rules:
   - apiGroups:
@@ -1207,6 +1232,7 @@ items:
     creationTimestamp: null
     labels:
       kubernetes.io/bootstrapping: rbac-defaults
+    lastUpdateTimestamp: null
     name: system:controller:ttl-controller
   rules:
   - apiGroups:
