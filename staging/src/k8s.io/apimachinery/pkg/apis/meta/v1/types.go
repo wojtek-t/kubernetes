@@ -184,7 +184,7 @@ type ObjectMeta struct {
 	// Null for lists.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
-	LastUpdateTimestamp Time `json:"lastUpdateTimestamp,omitempty"`
+	LastUpdateTimestamp Time `json:"lastUpdateTimestamp,omitempty" protobuf:"bytes,17,opt,name=lastUpdateTimestamp"`
 
 	// DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
 	// field is set by the server when a graceful deletion is requested by the user, and is not

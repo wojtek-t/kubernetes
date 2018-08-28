@@ -638,6 +638,7 @@ func (in *MicroTime) DeepCopy() *MicroTime {
 func (in *ObjectMeta) DeepCopyInto(out *ObjectMeta) {
 	*out = *in
 	in.CreationTimestamp.DeepCopyInto(&out.CreationTimestamp)
+	in.LastUpdateTimestamp.DeepCopyInto(&out.LastUpdateTimestamp)
 	if in.DeletionTimestamp != nil {
 		in, out := &in.DeletionTimestamp, &out.DeletionTimestamp
 		*out = (*in).DeepCopy()
