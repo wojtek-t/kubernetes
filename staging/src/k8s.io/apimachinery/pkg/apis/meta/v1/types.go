@@ -174,6 +174,18 @@ type ObjectMeta struct {
 	// +optional
 	CreationTimestamp Time `json:"creationTimestamp,omitempty" protobuf:"bytes,8,opt,name=creationTimestamp"`
 
+	// LastUpdateTimestamp is a timestamp representing the server time when this object
+	// was last modified. It is not guaranteed to be set in happens-before order across
+	// separate operations.
+	// Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+	//
+	// Populated by the system.
+	// Read-only.
+	// Null for lists.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	LastUpdateTimestamp Time `json:"lastUpdateTimestamp,omitempty"`
+
 	// DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This
 	// field is set by the server when a graceful deletion is requested by the user, and is not
 	// directly settable by a client. The resource is expected to be deleted (no longer visible
