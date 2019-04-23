@@ -804,7 +804,9 @@ func (c *Cacher) dispatchEvents() {
 
 func (c *Cacher) dispatchEvent(event *watchCacheEvent) {
 	// FIXME: Introduce caching, but only at this level for now.
-	event.Object = newCachingObject(event.Object)
+	if event.Type != watch.Bookmark {
+		event.Object = newCachingObject(event.Object)
+	}
 
 	c.startDispatching(event)
 	defer c.finishDispatching()
@@ -1198,14 +1200,14 @@ func (c *cacheWatcher) convertToWatchEvent(event *watchCacheEvent) *watch.Event 
 	switch {
 	case curObjPasses && !oldObjPasses:
 		watchEvent.Type = watch.Added
-		if _, ok := event.Object.(*runtime.CachingObject); ok {
+		if _, ok := event.Object.(*CachingObject); ok {
 			watchEvent.Object = event.Object
 		} else {
 			watchEvent.Object = event.Object.DeepCopyObject()
 		}
 	case curObjPasses && oldObjPasses:
 		watchEvent.Type = watch.Modified
-		if _, ok := event.Object.(*runtime.CachingObject); ok {
+		if _, ok := event.Object.(*CachingObject); ok {
 			watchEvent.Object = event.Object
 		} else {
 			watchEvent.Object = event.Object.DeepCopyObject()
@@ -1221,7 +1223,7 @@ func (c *cacheWatcher) convertToWatchEvent(event *watchCacheEvent) *watch.Event 
 		watchEvent.Object = oldObj
 	}
 
-	return watchEvent
+	return &watchEvent
 }
 
 // NOTE: sendWatchCacheEvent is assumed to not modify <event> !!!
