@@ -166,7 +166,11 @@ type Interface interface {
 
 	// Delete removes the specified key and returns the value that existed at that spot.
 	// If key didn't exist, it will return NotFound storage error.
-	Delete(ctx context.Context, key string, out runtime.Object, preconditions *Preconditions, validateDeletion ValidateObjectFunc) error
+	// If 'suggestion' can contain zero or one element - in such case this can be used as
+	// a suggestion about the current version of the object to avoid read operation from
+	// storage to get it.
+	Delete(ctx context.Context, key string, out runtime.Object, preconditions *Preconditions,
+		validateDeletion ValidateObjectFunc, suggestion ...runtime.Object) error
 
 	// Watch begins watching the specified key. Events are decoded into API objects,
 	// and any items selected by 'p' are sent down to returned watch.Interface.

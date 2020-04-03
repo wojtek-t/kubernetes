@@ -661,6 +661,39 @@ func TestGuaranteedUpdateChecksStoredData(t *testing.T) {
 	}
 }
 
+func TestDeleteChecksStoredData(t *testing.T) {
+	ctx, store, cluster := testSetup(t)
+	defer cluster.Terminate(t)
+
+	input := &example.Pod{ObjectMeta: metav1.ObjectMeta{Name: "foo"}}
+	key := "/somekey"
+
+	// serialize input into etcd with data that would be normalized by a write - in this case, leading
+	// and trailing whitespace
+	codec := codecs.LegacyCodec(examplev1.SchemeGroupVersion)
+	data, err := runtime.Encode(codec, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := store.client.Put(ctx, key, "test! "+string(data)+" ")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	currentRV := strconv.FormatInt(resp.Header.Revision, 10)
+
+	preconditions := &storage.Preconditions{
+		ResourceVersion: &currentRV,
+	}
+
+	// Pretend that input is the older version.
+	input.ResourceVersion = strconv.FormatInt(resp.Header.Revision-1, 10)
+	out := &example.Pod{}
+	if err = store.Delete(ctx, key, out, preconditions, storage.ValidateAllObjectFunc, input); err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+}
+
 func TestGuaranteedUpdateWithConflict(t *testing.T) {
 	ctx, store, cluster := testSetup(t)
 	defer cluster.Terminate(t)

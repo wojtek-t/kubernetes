@@ -158,7 +158,7 @@ type FailDeletionStorage struct {
 	Called *bool
 }
 
-func (f FailDeletionStorage) Delete(ctx context.Context, key string, out runtime.Object, precondition *apiserverstorage.Preconditions, _ apiserverstorage.ValidateObjectFunc) error {
+func (f FailDeletionStorage) Delete(ctx context.Context, key string, out runtime.Object, precondition *apiserverstorage.Preconditions, _ apiserverstorage.ValidateObjectFunc, _ ...runtime.Object) error {
 	*f.Called = true
 	return apiserverstorage.NewKeyNotFoundError(key, 0)
 }

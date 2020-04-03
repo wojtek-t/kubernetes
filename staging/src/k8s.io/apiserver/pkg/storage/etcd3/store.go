@@ -186,34 +186,72 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 }
 
 // Delete implements storage.Interface.Delete.
-func (s *store) Delete(ctx context.Context, key string, out runtime.Object, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc) error {
+func (s *store) Delete(ctx context.Context, key string, out runtime.Object, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc, suggestion ...runtime.Object) error {
 	v, err := conversion.EnforcePtr(out)
 	if err != nil {
 		return fmt.Errorf("unable to convert output object to pointer: %v", err)
 	}
 	key = path.Join(s.pathPrefix, key)
-	return s.conditionalDelete(ctx, key, out, v, preconditions, validateDeletion)
+	return s.conditionalDelete(ctx, key, out, v, preconditions, validateDeletion, suggestion...)
 }
 
-func (s *store) conditionalDelete(ctx context.Context, key string, out runtime.Object, v reflect.Value, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc) error {
-	startTime := time.Now()
-	getResp, err := s.client.KV.Get(ctx, key)
-	metrics.RecordEtcdRequestLatency("get", getTypeName(out), startTime)
-	if err != nil {
-		return err
+func (s *store) conditionalDelete(ctx context.Context, key string, out runtime.Object, v reflect.Value, preconditions *storage.Preconditions, validateDeletion storage.ValidateObjectFunc, suggestion ...runtime.Object) error {
+	getCurrentState := func() (*objState, error) {
+		startTime := time.Now()
+		getResp, err := s.client.KV.Get(ctx, key)
+		metrics.RecordEtcdRequestLatency("get", getTypeName(out), startTime)
+		if err != nil {
+			return nil, err
+		}
+		return s.getState(getResp, key, v, false)
 	}
-	for {
-		origState, err := s.getState(getResp, key, v, false)
+
+	var origState *objState
+	var err error
+	var mustCheckData bool
+	if len(suggestion) == 1 && suggestion[0] != nil {
+		origState, err = s.getStateFromObject(suggestion[0])
 		if err != nil {
 			return err
 		}
+		mustCheckData = true
+	} else {
+		origState, err = getCurrentState()
+		if err != nil {
+			return err
+		}
+	}
+
+	for {
 		if preconditions != nil {
 			if err := preconditions.Check(key, origState.obj); err != nil {
-				return err
+				if !mustCheckData {
+					return err
+				}
+
+				// It's possible we're working with stale data.
+				// Actually fetch
+				origState, err = getCurrentState()
+				if err != nil {
+					return err
+				}
+				mustCheckData = false
+				continue
 			}
 		}
 		if err := validateDeletion(ctx, origState.obj); err != nil {
-			return err
+			if !mustCheckData {
+				return err
+			}
+
+			// It's possible we're working with stale data.
+			// Actually fetch
+			origState, err = getCurrentState()
+			if err != nil {
+				return err
+			}
+			mustCheckData = false
+			continue
 		}
 		startTime := time.Now()
 		txnResp, err := s.client.KV.Txn(ctx).If(
@@ -228,8 +266,13 @@ func (s *store) conditionalDelete(ctx context.Context, key string, out runtime.O
 			return err
 		}
 		if !txnResp.Succeeded {
-			getResp = (*clientv3.GetResponse)(txnResp.Responses[0].GetResponseRange())
+			getResp := (*clientv3.GetResponse)(txnResp.Responses[0].GetResponseRange())
 			klog.V(4).Infof("deletion of %s failed because of a conflict, going to retry", key)
+			origState, err = s.getState(getResp, key, v, false)
+			if err != nil {
+				return err
+			}
+			mustCheckData = false
 			continue
 		}
 		return decode(s.codec, s.versioner, origState.data, out, origState.rev)
