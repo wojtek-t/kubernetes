@@ -513,6 +513,77 @@ func TestWatcherNotGoingBackInTime(t *testing.T) {
 	}
 }
 
+func TestWatchBookmarksOnShutdown(t *testing.T) {
+	backingStorage := &dummyStorage{}
+	cacher, _, err := newTestCacher(backingStorage)
+	if err != nil {
+		t.Fatalf("Couldn't create cacher: %v", err)
+	}
+	defer cacher.Stop()
+
+	// Wait until cacher is initialized.
+	cacher.ready.wait()
+
+	makePod := func(i int) *examplev1.Pod {
+		return &examplev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            fmt.Sprintf("pod-%d", 1000+i),
+				Namespace:       "ns",
+				ResourceVersion: fmt.Sprintf("%d", 1000+i),
+			},
+		}
+	}
+	if err := cacher.watchCache.Add(makePod(0)); err != nil {
+		t.Errorf("error: %v", err)
+	}
+	expectedRV := 1111
+
+	predicate := storage.Everything
+	predicate.AllowWatchBookmarks = true
+
+	wg := sync.WaitGroup{}
+
+	keysToWatch := []string{"pods/ns", "pods", "pods/ns2"}
+	for _, key := range keysToWatch {
+		wg.Add(1)
+		w, err := cacher.Watch(context.TODO(), key, storage.ListOptions{
+			ResourceVersion: "1000",
+			Predicate:       predicate,
+		})
+		if err != nil {
+			t.Fatalf("Failed to create watch: %v", err)
+		}
+		// Wait for bookmark event on shutdown.
+		go func() {
+			defer wg.Done()
+			for {
+				event, ok := <-w.ResultChan()
+				if !ok {
+					t.Fatalf("Unexpected closed channel")
+				}
+				rv, err := cacher.versioner.ObjectResourceVersion(event.Object)
+				if err != nil {
+					t.Errorf("failed to parse resource version from %#v: %v", event.Object, err)
+				}
+				if event.Type == watch.Bookmark && rv == uint64(expectedRV) {
+					return
+				}
+			}
+		}()
+	}
+
+	// Simulate progress notify event.
+	cacher.watchCache.UpdateResourceVersion(strconv.Itoa(expectedRV))
+
+	// Wait until the event was propagated.
+	time.Sleep(time.Second)
+
+	cacher.Stop()
+	wg.Wait()
+
+	t.Errorf("DUPA")
+}
+
 func TestCacheWatcherStoppedInAnotherGoroutine(t *testing.T) {
 	var w *cacheWatcher
 	done := make(chan struct{})

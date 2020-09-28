@@ -370,7 +370,8 @@ func NewCacherFromConfig(config Config) (*Cacher, error) {
 	cacher.watchCache = watchCache
 	cacher.reflector = reflector
 
-	go cacher.dispatchEvents()
+	dispatchingStopped := make(chan struct{})
+	go cacher.dispatchEvents(func() { close(dispatchingStopped) } )
 
 	cacher.stopWg.Add(1)
 	go func() {
@@ -383,6 +384,13 @@ func NewCacherFromConfig(config Config) (*Cacher, error) {
 				}
 			}, time.Second, stopCh,
 		)
+		// Wait until dispatching is stopped and shutdown bookmark
+		// events were sent before terminating watchers.
+		<-dispatchingStopped
+		
+		// FIXME: Give some time for watchers to dispatch bookmarks
+		// before shutting down them.
+		time.Sleep(time.Second)
 	}()
 
 	return cacher, nil
@@ -781,7 +789,9 @@ func (c *Cacher) processEvent(event *watchCacheEvent) {
 	c.incoming <- *event
 }
 
-func (c *Cacher) dispatchEvents() {
+func (c *Cacher) dispatchEvents(stopFn func()) {
+	defer stopFn()
+
 	// Jitter to help level out any aggregate load.
 	bookmarkTimer := c.clock.NewTimer(wait.Jitter(time.Second, 0.25))
 	defer bookmarkTimer.Stop()
@@ -827,6 +837,29 @@ func (c *Cacher) dispatchEvents() {
 			}
 			c.dispatchEvent(bookmarkEvent)
 		case <-c.stopCh:
+			// Send watch bookmarks to all watchers on shutdown.
+			if lastProcessedResourceVersion == 0 {
+				return
+			}
+			bookmarkEvent := &watchCacheEvent{
+				Type:            watch.Bookmark,
+				Object:          c.newFunc(),
+				ResourceVersion: lastProcessedResourceVersion,
+			}
+			if err := c.versioner.UpdateObject(bookmarkEvent.Object, bookmarkEvent.ResourceVersion); err != nil {
+				klog.Errorf("failure to set resourceVersion to %d on bookmark event %+v", bookmarkEvent.ResourceVersion, bookmarkEvent.Object)
+				continue
+			}
+			for _, watchers := range c.bookmarkWatchers.watchersBuckets {
+				for _, watcher := range watchers {
+					// c.Lock() is held here.
+					// watcher.stopThreadUnsafe() is protected by c.Lock()
+					if watcher.stopped {
+						continue
+					}
+					watcher.nonblockingAdd(bookmarkEvent)
+				}
+			}
 			return
 		}
 	}
