@@ -17,15 +17,16 @@ limitations under the License.
 package request
 
 import (
+	"math"
+	"net/http"
+	"net/url"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/features"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/klog/v2"
-	"math"
-	"net/http"
-	"net/url"
 )
 
 func newListWidthEstimator(countFn objectCountGetterFunc) WidthEstimatorFunc {

@@ -45,11 +45,18 @@ func (f objectCountGetterFunc) Get(key string) int64 {
 	return f(key)
 }
 
+type watchCountGetterFunc func(*apirequest.RequestInfo) int
+
+func (f watchCountGetterFunc) Get(requestInfo *apirequest.RequestInfo) int {
+	return f(requestInfo)
+}
+
 // NewWidthEstimator calculates the width of the given request, if no WidthEstimatorFunc
 // matches the given request then the default width with '1' Seats is returned.
-func NewWidthEstimator(countFn objectCountGetterFunc) WidthEstimatorFunc {
+func NewWidthEstimator(objectCountFn objectCountGetterFunc, watchCountFn watchCountGetterFunc) WidthEstimatorFunc {
 	estimator := &widthEstimator{
-		listWidthEstimator: newListWidthEstimator(countFn),
+		listWidthEstimator:     newListWidthEstimator(objectCountFn),
+		mutatingWidthEstimator: newMutatingWidthEstimator(watchCountFn),
 	}
 	return estimator.estimate
 }
@@ -66,6 +73,8 @@ func (e WidthEstimatorFunc) EstimateWidth(r *http.Request) Width {
 type widthEstimator struct {
 	// listWidthEstimator calculates the width of list request(s)
 	listWidthEstimator WidthEstimatorFunc
+	// mutatingWidthEstimator calculates the width of mutating request(s)
+	mutatingWidthEstimator WidthEstimatorFunc
 }
 
 func (e *widthEstimator) estimate(r *http.Request) Width {
@@ -79,6 +88,8 @@ func (e *widthEstimator) estimate(r *http.Request) Width {
 	switch requestInfo.Verb {
 	case "list":
 		return e.listWidthEstimator.EstimateWidth(r)
+	case "create", "update", "patch", "delete":
+		return e.mutatingWidthEstimator.EstimateWidth(r)
 	}
 
 	return Width{Seats: minimumSeats}
