@@ -46,6 +46,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&PriorityClass{},
 		&PriorityClassList{},
+		&PodGroup{},
+		&PodGroupList{},
+		&Workload{},
+		&WorkloadList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
