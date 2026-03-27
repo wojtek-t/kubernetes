@@ -451,6 +451,18 @@ func TestValidatePodGroupUpdate(t *testing.T) {
 			old:    mkPodGroup(),
 			update: mkPodGroup(),
 		},
+		"scheduling policy update": {
+			old: mkPodGroup(func(pg *scheduling.PodGroup) {
+				pg.Spec.SchedulingPolicy = scheduling.PodGroupSchedulingPolicy{
+					Gang: &scheduling.GangSchedulingPolicy{MinCount: 1},
+				}
+			}),
+			update: mkPodGroup(func(pg *scheduling.PodGroup) {
+				pg.Spec.SchedulingPolicy = scheduling.PodGroupSchedulingPolicy{
+					Gang: &scheduling.GangSchedulingPolicy{MinCount: 2},
+				}
+			}),
+		},
 		"status update": {
 			old: mkPodGroup(func(pg *scheduling.PodGroup) {
 				pg.Status.Conditions = append(pg.Status.Conditions, metav1.Condition{
@@ -477,6 +489,18 @@ func TestValidatePodGroupUpdate(t *testing.T) {
 		old    *scheduling.PodGroup
 		update *scheduling.PodGroup
 	}{
+			"change scheduling policy type": {
+				old: mkPodGroup(func(pg *scheduling.PodGroup) {
+					pg.Spec.SchedulingPolicy = scheduling.PodGroupSchedulingPolicy{
+						Gang: &scheduling.GangSchedulingPolicy{MinCount: 1},
+					}
+				}),
+				update: mkPodGroup(func(pg *scheduling.PodGroup) {
+					pg.Spec.SchedulingPolicy = scheduling.PodGroupSchedulingPolicy{
+						Basic: &scheduling.BasicSchedulingPolicy{},
+					}
+				}),
+			},
 		"change name": {
 			old: mkPodGroup(),
 			update: mkPodGroup(func(pg *scheduling.PodGroup) {

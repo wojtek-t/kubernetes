@@ -75,7 +75,20 @@ func ValidatePodGroup(podGroup *scheduling.PodGroup) field.ErrorList {
 
 // ValidatePodGroupUpdate tests if an update to PodGroup is valid.
 func ValidatePodGroupUpdate(podGroup, oldPodGroup *scheduling.PodGroup) field.ErrorList {
-	return apivalidation.ValidateObjectMetaUpdate(&podGroup.ObjectMeta, &oldPodGroup.ObjectMeta, field.NewPath("metadata"))
+	allErrs := apivalidation.ValidateObjectMetaUpdate(&podGroup.ObjectMeta, &oldPodGroup.ObjectMeta, field.NewPath("metadata"))
+	allErrs = append(allErrs, validateSchedulingPolicyTypeUpdate(&podGroup.Spec.SchedulingPolicy, &oldPodGroup.Spec.SchedulingPolicy, field.NewPath("spec", "schedulingPolicy"))...)
+	return allErrs
+}
+
+func validateSchedulingPolicyTypeUpdate(newPolicy, oldPolicy *scheduling.PodGroupSchedulingPolicy, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+	if (newPolicy.Basic != nil && oldPolicy.Basic == nil) || (newPolicy.Basic == nil && oldPolicy.Basic != nil) {
+		allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type between Basic and Gang"))
+	}
+	if (newPolicy.Gang != nil && oldPolicy.Gang == nil) || (newPolicy.Gang == nil && oldPolicy.Gang != nil) {
+		allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type between Gang and Basic"))
+	}
+	return allErrs
 }
 
 // ValidateWorkload tests if all fields in a Workload are set correctly.
@@ -85,7 +98,17 @@ func ValidateWorkload(workload *scheduling.Workload) field.ErrorList {
 
 // ValidateWorkloadUpdate tests if an update to Workload is valid.
 func ValidateWorkloadUpdate(workload, oldWorkload *scheduling.Workload) field.ErrorList {
-	return apivalidation.ValidateObjectMetaUpdate(&workload.ObjectMeta, &oldWorkload.ObjectMeta, field.NewPath("metadata"))
+	allErrs := apivalidation.ValidateObjectMetaUpdate(&workload.ObjectMeta, &oldWorkload.ObjectMeta, field.NewPath("metadata"))
+
+	for i, newTmpl := range workload.Spec.PodGroupTemplates {
+		for _, oldTmpl := range oldWorkload.Spec.PodGroupTemplates {
+			if newTmpl.Name == oldTmpl.Name {
+				allErrs = append(allErrs, validateSchedulingPolicyTypeUpdate(&newTmpl.SchedulingPolicy, &oldTmpl.SchedulingPolicy, field.NewPath("spec", "podGroupTemplates").Index(i).Child("schedulingPolicy"))...)
+			}
+		}
+	}
+
+	return allErrs
 }
 
 // ValidatePodGroupStatusUpdate tests if an update to the status of a PodGroup is valid.
