@@ -82,11 +82,15 @@ func ValidatePodGroupUpdate(podGroup, oldPodGroup *scheduling.PodGroup) field.Er
 
 func validateSchedulingPolicyTypeUpdate(newPolicy, oldPolicy *scheduling.PodGroupSchedulingPolicy, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
-	if (newPolicy.Basic != nil && oldPolicy.Basic == nil) || (newPolicy.Basic == nil && oldPolicy.Basic != nil) {
-		allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type between Basic and Gang"))
-	}
-	if (newPolicy.Gang != nil && oldPolicy.Gang == nil) || (newPolicy.Gang == nil && oldPolicy.Gang != nil) {
-		allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type between Gang and Basic"))
+	switch {
+	case oldPolicy.Basic != nil:
+		if newPolicy.Basic == nil {
+			allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type from Basic"))
+		}
+	case oldPolicy.Gang != nil:
+		if newPolicy.Gang == nil {
+			allErrs = append(allErrs, field.Invalid(fldPath, newPolicy, "cannot change scheduling policy type from Gang"))
+		}
 	}
 	return allErrs
 }
