@@ -24,7 +24,6 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/scheduling/v1alpha2"
 	"k8s.io/apimachinery/pkg/util/sets"
 	fwk "k8s.io/kube-scheduler/framework"
 	"k8s.io/kubernetes/pkg/scheduler/apis/config"
@@ -161,16 +160,6 @@ type SortedScoredNodes interface {
 	Len() int
 }
 
-// PodGroupPostFilterPlugin is an interface for plugins that are called
-// after a PodGroup cannot be scheduled.
-// It should not be used by any other plugin but DefaultPreemption.
-type PodGroupPostFilterPlugin interface {
-	fwk.Plugin
-
-	// PodGroupPostFilter is called after a PodGroup cannot be scheduled.
-	PodGroupPostFilter(ctx context.Context, pg *v1alpha2.PodGroup, pods []*v1.Pod, pgSchedulingFunc func(ctx context.Context) *fwk.Status) *fwk.Status
-}
-
 // Framework manages the set of plugins in use by the scheduling framework.
 // Configured plugins are called at specified points in a scheduling context.
 type Framework interface {
@@ -288,7 +277,7 @@ type Framework interface {
 	HasScorePlugins() bool
 
 	// PodGroupPostFilterPlugins returns registered PodGroupPostFilter plugins.
-	PodGroupPostFilterPlugins() []PodGroupPostFilterPlugin
+	PodGroupPostFilterPlugins() []fwk.PodGroupPostFilterPlugin
 
 	// ListPlugins returns a map of extension point name to list of configured Plugins.
 	ListPlugins() *config.Plugins

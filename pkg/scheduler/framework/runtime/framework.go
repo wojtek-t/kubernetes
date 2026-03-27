@@ -75,7 +75,7 @@ type frameworkImpl struct {
 	postBindPlugins           []fwk.PostBindPlugin
 	permitPlugins             []fwk.PermitPlugin
 	batchablePlugins          []fwk.SignPlugin
-	podGroupPostFilterPlugins []framework.PodGroupPostFilterPlugin
+	podGroupPostFilterPlugins []fwk.PodGroupPostFilterPlugin
 
 	placementGeneratePlugins   []fwk.PlacementGeneratePlugin
 	placementScorePlugins      []fwk.PlacementScorePlugin
@@ -477,8 +477,8 @@ func NewFramework(ctx context.Context, r Registry, profile *config.KubeScheduler
 	// Put default preemption as the only PodGroupPostFilterPlugin
 	if utilfeature.DefaultFeatureGate.Enabled(features.WorkloadAwarePreemption) {
 		if dp, ok := f.pluginsMap[names.DefaultPreemption]; ok {
-			if _, ok := dp.(framework.PodGroupPostFilterPlugin); ok {
-				f.podGroupPostFilterPlugins = append(f.podGroupPostFilterPlugins, dp.(framework.PodGroupPostFilterPlugin))
+			if _, ok := dp.(fwk.PodGroupPostFilterPlugin); ok {
+				f.podGroupPostFilterPlugins = append(f.podGroupPostFilterPlugins, dp.(fwk.PodGroupPostFilterPlugin))
 			} else {
 				logger.V(2).Info("Workload Aware Preemption is enabled, but default preemption plugin does not fulfill PodGroupPostFilterPlugin interface. Workload Aware Preemption will not be used.")
 			}
@@ -2140,7 +2140,7 @@ func (f *frameworkImpl) HasScorePlugins() bool {
 }
 
 // PodGroupPostFilterPlugins returns registered PodGroup PostFilter plugins.
-func (f *frameworkImpl) PodGroupPostFilterPlugins() []framework.PodGroupPostFilterPlugin {
+func (f *frameworkImpl) PodGroupPostFilterPlugins() []fwk.PodGroupPostFilterPlugin {
 	return f.podGroupPostFilterPlugins
 }
 

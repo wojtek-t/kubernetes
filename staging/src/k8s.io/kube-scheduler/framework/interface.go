@@ -29,6 +29,7 @@ import (
 	"github.com/google/go-cmp/cmp"         //nolint:depguard
 	"github.com/google/go-cmp/cmp/cmpopts" //nolint:depguard
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/scheduling/v1alpha2"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/informers"
@@ -527,6 +528,16 @@ type PreFilterPlugin interface {
 	// CycleState, and may call those functions more than once before calling
 	// Filter again on a specific node.
 	PreFilterExtensions() PreFilterExtensions
+}
+
+// PodGroupPostFilterPlugin is an interface for plugins that are called
+// after a PodGroup cannot be scheduled.
+// It should not be used by any other plugin but DefaultPreemption.
+type PodGroupPostFilterPlugin interface {
+	Plugin
+
+	// PodGroupPostFilter is called after a PodGroup cannot be scheduled.
+	PodGroupPostFilter(ctx context.Context, pg *v1alpha2.PodGroup, pods []*v1.Pod, pgSchedulingFunc func(ctx context.Context) *Status) *Status
 }
 
 // FilterPlugin is an interface for Filter plugins. These plugins are called at the
