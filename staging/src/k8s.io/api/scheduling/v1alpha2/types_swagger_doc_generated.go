@@ -35,14 +35,6 @@ func (BasicSchedulingPolicy) SwaggerDoc() map[string]string {
 	return map_BasicSchedulingPolicy
 }
 
-var map_GangMultiPodGroupSchedulingPolicy = map[string]string{
-	"": "GangMultiPodGroupSchedulingPolicy indicates that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
-}
-
-func (GangMultiPodGroupSchedulingPolicy) SwaggerDoc() map[string]string {
-	return map_GangMultiPodGroupSchedulingPolicy
-}
-
 var map_GangSchedulingPolicy = map[string]string{
 	"":         "GangSchedulingPolicy defines the parameters for gang scheduling.",
 	"minCount": "MinCount is the minimum number of pods that must be schedulable or scheduled at the same time for the scheduler to admit the entire group. It must be a positive integer.",
@@ -73,6 +65,16 @@ func (MultiPodGroupList) SwaggerDoc() map[string]string {
 	return map_MultiPodGroupList
 }
 
+var map_MultiPodGroupSchedulingPolicy = map[string]string{
+	"":      "MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup. Exactly one policy must be set.",
+	"basic": "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
+	"gang":  "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
+}
+
+func (MultiPodGroupSchedulingPolicy) SwaggerDoc() map[string]string {
+	return map_MultiPodGroupSchedulingPolicy
+}
+
 var map_MultiPodGroupSpec = map[string]string{
 	"":                 "MultiPodGroupSpec defines the desired state of a MultiPodGroup.",
 	"parentRef":        "ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.",
@@ -90,6 +92,15 @@ var map_MultiPodGroupStatus = map[string]string{
 
 func (MultiPodGroupStatus) SwaggerDoc() map[string]string {
 	return map_MultiPodGroupStatus
+}
+
+var map_ParentReference = map[string]string{
+	"":     "ParentReference contains a reference to the parent MultiPodGroup.",
+	"name": "Name uniquely identifies the parent MultiPodGroup.",
+}
+
+func (ParentReference) SwaggerDoc() map[string]string {
+	return map_ParentReference
 }
 
 var map_PodGroup = map[string]string{
@@ -144,10 +155,9 @@ func (PodGroupSchedulingConstraints) SwaggerDoc() map[string]string {
 }
 
 var map_PodGroupSchedulingPolicy = map[string]string{
-	"":                  "PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup. Exactly one policy must be set.",
-	"basic":             "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
-	"gang":              "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
-	"gangMultiPodGroup": "GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
+	"":      "PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup. Exactly one policy must be set.",
+	"basic": "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
+	"gang":  "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
 }
 
 func (PodGroupSchedulingPolicy) SwaggerDoc() map[string]string {

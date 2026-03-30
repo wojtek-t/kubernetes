@@ -24,10 +24,10 @@ package v1alpha2
 // MultiPodGroupSpec defines the desired state of a MultiPodGroup.
 type MultiPodGroupSpecApplyConfiguration struct {
 	// ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
-	ParentRef *TypedLocalObjectReferenceApplyConfiguration `json:"parentRef,omitempty"`
+	ParentRef *ParentReferenceApplyConfiguration `json:"parentRef,omitempty"`
 	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
 	// This field is immutable.
-	SchedulingPolicy *PodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
+	SchedulingPolicy *MultiPodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
 }
 
 // MultiPodGroupSpecApplyConfiguration constructs a declarative configuration of the MultiPodGroupSpec type for use with
@@ -39,7 +39,7 @@ func MultiPodGroupSpec() *MultiPodGroupSpecApplyConfiguration {
 // WithParentRef sets the ParentRef field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ParentRef field is set to the value of the last call.
-func (b *MultiPodGroupSpecApplyConfiguration) WithParentRef(value *TypedLocalObjectReferenceApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
+func (b *MultiPodGroupSpecApplyConfiguration) WithParentRef(value *ParentReferenceApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
 	b.ParentRef = value
 	return b
 }
@@ -47,7 +47,7 @@ func (b *MultiPodGroupSpecApplyConfiguration) WithParentRef(value *TypedLocalObj
 // WithSchedulingPolicy sets the SchedulingPolicy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SchedulingPolicy field is set to the value of the last call.
-func (b *MultiPodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *PodGroupSchedulingPolicyApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
+func (b *MultiPodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *MultiPodGroupSchedulingPolicyApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
 	b.SchedulingPolicy = value
 	return b
 }

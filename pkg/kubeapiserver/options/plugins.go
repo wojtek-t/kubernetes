@@ -86,8 +86,8 @@ var AllOrderedPlugins = []string{
 	imagepolicy.PluginName,                  // ImagePolicyWebhook
 	podsecurity.PluginName,                  // PodSecurity
 	podnodeselector.PluginName,              // PodNodeSelector
-	podpriority.PluginName,
-			multipodgroup.PluginName,                  // Priority
+	podpriority.PluginName,                  // Priority
+			multipodgroup.PluginName,
 	defaulttolerationseconds.PluginName,     // DefaultTolerationSeconds
 	podtolerationrestriction.PluginName,     // PodTolerationRestriction
 	eventratelimit.PluginName,               // EventRateLimit

@@ -14723,18 +14723,6 @@ var schemaYAML = typed.YAMLObject(`types:
         elementType:
           namedType: __untyped_deduced_
         elementRelationship: separable
-- name: io.k8s.api.scheduling.v1alpha2.GangMultiPodGroupSchedulingPolicy
-  map:
-    elementType:
-      scalar: untyped
-      list:
-        elementType:
-          namedType: __untyped_atomic_
-        elementRelationship: atomic
-      map:
-        elementType:
-          namedType: __untyped_deduced_
-        elementRelationship: separable
 - name: io.k8s.api.scheduling.v1alpha2.GangSchedulingPolicy
   map:
     fields:
@@ -14763,15 +14751,30 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupStatus
       default: {}
+- name: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSchedulingPolicy
+  map:
+    fields:
+    - name: basic
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.BasicSchedulingPolicy
+    - name: gang
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.GangSchedulingPolicy
+    unions:
+    - fields:
+      - fieldName: basic
+        discriminatorValue: Basic
+      - fieldName: gang
+        discriminatorValue: Gang
 - name: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSpec
   map:
     fields:
     - name: parentRef
       type:
-        namedType: io.k8s.api.scheduling.v1alpha2.TypedLocalObjectReference
+        namedType: io.k8s.api.scheduling.v1alpha2.ParentReference
     - name: schedulingPolicy
       type:
-        namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSchedulingPolicy
       default: {}
 - name: io.k8s.api.scheduling.v1alpha2.MultiPodGroupStatus
   map:
@@ -14784,6 +14787,13 @@ var schemaYAML = typed.YAMLObject(`types:
           elementRelationship: associative
           keys:
           - type
+- name: io.k8s.api.scheduling.v1alpha2.ParentReference
+  map:
+    fields:
+    - name: name
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.scheduling.v1alpha2.PodGroup
   map:
     fields:
@@ -14837,26 +14847,6 @@ var schemaYAML = typed.YAMLObject(`types:
           elementType:
             namedType: io.k8s.api.scheduling.v1alpha2.TopologyConstraint
           elementRelationship: atomic
-- name: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy
-  map:
-    fields:
-    - name: basic
-      type:
-        namedType: io.k8s.api.scheduling.v1alpha2.BasicSchedulingPolicy
-    - name: gang
-      type:
-        namedType: io.k8s.api.scheduling.v1alpha2.GangSchedulingPolicy
-    - name: gangMultiPodGroup
-      type:
-        namedType: io.k8s.api.scheduling.v1alpha2.GangMultiPodGroupSchedulingPolicy
-    unions:
-    - fields:
-      - fieldName: basic
-        discriminatorValue: Basic
-      - fieldName: gang
-        discriminatorValue: Gang
-      - fieldName: gangMultiPodGroup
-        discriminatorValue: GangMultiPodGroup
 - name: io.k8s.api.scheduling.v1alpha2.PodGroupSpec
   map:
     fields:
@@ -14866,7 +14856,7 @@ var schemaYAML = typed.YAMLObject(`types:
       default: Pod
     - name: parentRef
       type:
-        namedType: io.k8s.api.scheduling.v1alpha2.TypedLocalObjectReference
+        namedType: io.k8s.api.scheduling.v1alpha2.ParentReference
     - name: podGroupTemplateRef
       type:
         namedType: io.k8s.api.scheduling.v1alpha2.PodGroupTemplateReference
@@ -14889,7 +14879,7 @@ var schemaYAML = typed.YAMLObject(`types:
         namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints
     - name: schedulingPolicy
       type:
-        namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSchedulingPolicy
       default: {}
 - name: io.k8s.api.scheduling.v1alpha2.PodGroupStatus
   map:
@@ -14939,7 +14929,7 @@ var schemaYAML = typed.YAMLObject(`types:
         namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingConstraints
     - name: schedulingPolicy
       type:
-        namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy
+        namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSchedulingPolicy
       default: {}
 - name: io.k8s.api.scheduling.v1alpha2.PodGroupTemplateReference
   map:

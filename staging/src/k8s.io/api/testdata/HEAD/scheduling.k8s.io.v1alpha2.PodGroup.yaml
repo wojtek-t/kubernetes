@@ -35,8 +35,6 @@ metadata:
 spec:
   disruptionMode: disruptionModeValue
   parentRef:
-    apiGroup: apiGroupValue
-    kind: kindValue
     name: nameValue
   podGroupTemplateRef:
     workload:
@@ -55,7 +53,6 @@ spec:
     basic: {}
     gang:
       minCount: 1
-    gangMultiPodGroup: {}
 status:
   conditions:
   - lastTransitionTime: "2004-01-01T01:01:01Z"

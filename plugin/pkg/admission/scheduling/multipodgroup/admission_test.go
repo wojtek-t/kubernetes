@@ -10,7 +10,6 @@ import (
 	clientgofake "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/informers"
 
-	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/apis/scheduling"
 	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
 )
@@ -36,7 +35,7 @@ func TestValidate(t *testing.T) {
 			target: &scheduling.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg-1", Namespace: "default"},
 				Spec: scheduling.PodGroupSpec{
-					ParentRef: &core.TypedLocalObjectReference{Name: "mpg-1"},
+					ParentRef: &scheduling.ParentReference{Name: "mpg-1"},
 				},
 			},
 			existing: []runtime.Object{
@@ -52,20 +51,20 @@ func TestValidate(t *testing.T) {
 			target: &scheduling.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg-1", Namespace: "default"},
 				Spec: scheduling.PodGroupSpec{
-					ParentRef: &core.TypedLocalObjectReference{Name: "mpg-1"},
+					ParentRef: &scheduling.ParentReference{Name: "mpg-1"},
 				},
 			},
 			existing: []runtime.Object{
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-1", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-2"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-2"},
 					},
 				},
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-2", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-3"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-3"},
 					},
 				},
 				&schedulingv1alpha2.MultiPodGroup{
@@ -80,26 +79,26 @@ func TestValidate(t *testing.T) {
 			target: &scheduling.PodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "pg-1", Namespace: "default"},
 				Spec: scheduling.PodGroupSpec{
-					ParentRef: &core.TypedLocalObjectReference{Name: "mpg-1"},
+					ParentRef: &scheduling.ParentReference{Name: "mpg-1"},
 				},
 			},
 			existing: []runtime.Object{
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-1", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-2"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-2"},
 					},
 				},
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-2", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-3"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-3"},
 					},
 				},
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-3", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-4"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-4"},
 					},
 				},
 				&schedulingv1alpha2.MultiPodGroup{
@@ -114,14 +113,14 @@ func TestValidate(t *testing.T) {
 			target: &scheduling.MultiPodGroup{
 				ObjectMeta: metav1.ObjectMeta{Name: "mpg-1", Namespace: "default"},
 				Spec: scheduling.MultiPodGroupSpec{
-					ParentRef: &core.TypedLocalObjectReference{Name: "mpg-2"},
+					ParentRef: &scheduling.ParentReference{Name: "mpg-2"},
 				},
 			},
 			existing: []runtime.Object{
 				&schedulingv1alpha2.MultiPodGroup{
 					ObjectMeta: metav1.ObjectMeta{Name: "mpg-2", Namespace: "default"},
 					Spec: schedulingv1alpha2.MultiPodGroupSpec{
-						ParentRef: &schedulingv1alpha2.TypedLocalObjectReference{Name: "mpg-1"},
+						ParentRef: &schedulingv1alpha2.ParentReference{Name: "mpg-1"},
 					},
 				},
 			},

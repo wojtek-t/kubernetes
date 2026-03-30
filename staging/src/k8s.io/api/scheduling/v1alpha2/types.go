@@ -128,7 +128,7 @@ type PodGroupTemplate struct {
 	// SchedulingPolicy defines the scheduling policy for this PodGroupTemplate.
 	//
 	// +required
-	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroupTemplate.
 	// This field is only available when the TopologyAwareWorkloadScheduling feature gate is enabled.
@@ -224,19 +224,6 @@ type PodGroupSchedulingPolicy struct {
 	// +k8s:optional
 	// +k8s:unionMember
 	Gang *GangSchedulingPolicy `json:"gang,omitempty" protobuf:"bytes,2,opt,name=gang"`
-
-	// GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup
-	// and should be scheduled using all-or-nothing semantics.
-	//
-	// +optional
-	// +k8s:optional
-	// +k8s:unionMember
-	GangMultiPodGroup *GangMultiPodGroupSchedulingPolicy `json:"gangMultiPodGroup,omitempty" protobuf:"bytes,3,opt,name=gangMultiPodGroup"`
-}
-
-// GangMultiPodGroupSchedulingPolicy indicates that the pods in this group
-// are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.
-type GangMultiPodGroupSchedulingPolicy struct {
 }
 
 // BasicSchedulingPolicy indicates that standard Kubernetes
@@ -384,7 +371,7 @@ type PodGroupSpec struct {
 	//
 	// +required
 	// +k8s:immutable
-	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
@@ -471,11 +458,10 @@ type PodGroupSpec struct {
 	// +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:maximum=1000000000 # HighestUserDefinablePriority
 	// +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:minimum=-2147483648
 	Priority *int32 `json:"priority,omitempty" protobuf:"varint,7,opt,name=priority"`
-
 	// ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
 	// +optional
 	// +k8s:optional
-	ParentRef *TypedLocalObjectReference `json:"parentRef,omitempty" protobuf:"bytes,8,opt,name=parentRef"`
+	ParentRef *ParentReference `json:"parentRef,omitempty" protobuf:"bytes,8,opt,name=parentRef"`
 }
 
 // PodGroupStatus represents information about the status of a pod group.
@@ -618,6 +604,36 @@ type TopologyConstraint struct {
 	Key string `json:"key" protobuf:"bytes,1,opt,name=key"`
 }
 
+// ParentReference contains a reference to the parent MultiPodGroup.
+type ParentReference struct {
+	// Name uniquely identifies the parent MultiPodGroup.
+	//
+	// +required
+	// +k8s:required
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+}
+
+// MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup.
+// Exactly one policy must be set.
+// +union
+type MultiPodGroupSchedulingPolicy struct {
+	// Basic specifies that the pods in this group should be scheduled using
+	// standard Kubernetes scheduling behavior.
+	//
+	// +optional
+	// +k8s:optional
+	// +k8s:unionMember
+	Basic *BasicSchedulingPolicy `json:"basic,omitempty" protobuf:"bytes,1,opt,name=basic"`
+
+	// Gang specifies that the pods in this group should be scheduled using
+	// all-or-nothing semantics.
+	//
+	// +optional
+	// +k8s:optional
+	// +k8s:unionMember
+	Gang *GangSchedulingPolicy `json:"gang,omitempty" protobuf:"bytes,2,opt,name=gang"`
+}
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -662,14 +678,14 @@ type MultiPodGroupSpec struct {
 	// ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
 	// +optional
 	// +k8s:optional
-	ParentRef *TypedLocalObjectReference `json:"parentRef,omitempty" protobuf:"bytes,1,opt,name=parentRef"`
+	ParentRef *ParentReference `json:"parentRef,omitempty" protobuf:"bytes,1,opt,name=parentRef"`
 
 	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
 	// This field is immutable.
 	//
 	// +required
 	// +k8s:immutable
-	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 }
 
 // MultiPodGroupStatus represents information about the status of a MultiPodGroup.

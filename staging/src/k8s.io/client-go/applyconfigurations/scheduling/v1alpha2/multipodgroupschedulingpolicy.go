@@ -22,33 +22,30 @@ import (
 	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
 )
 
-// PodGroupSchedulingPolicyApplyConfiguration represents a declarative configuration of the PodGroupSchedulingPolicy type for use
+// MultiPodGroupSchedulingPolicyApplyConfiguration represents a declarative configuration of the MultiPodGroupSchedulingPolicy type for use
 // with apply.
 //
-// PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup.
+// MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup.
 // Exactly one policy must be set.
-type PodGroupSchedulingPolicyApplyConfiguration struct {
+type MultiPodGroupSchedulingPolicyApplyConfiguration struct {
 	// Basic specifies that the pods in this group should be scheduled using
 	// standard Kubernetes scheduling behavior.
 	Basic *schedulingv1alpha2.BasicSchedulingPolicy `json:"basic,omitempty"`
 	// Gang specifies that the pods in this group should be scheduled using
 	// all-or-nothing semantics.
 	Gang *GangSchedulingPolicyApplyConfiguration `json:"gang,omitempty"`
-	// GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup
-	// and should be scheduled using all-or-nothing semantics.
-	GangMultiPodGroup *schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy `json:"gangMultiPodGroup,omitempty"`
 }
 
-// PodGroupSchedulingPolicyApplyConfiguration constructs a declarative configuration of the PodGroupSchedulingPolicy type for use with
+// MultiPodGroupSchedulingPolicyApplyConfiguration constructs a declarative configuration of the MultiPodGroupSchedulingPolicy type for use with
 // apply.
-func PodGroupSchedulingPolicy() *PodGroupSchedulingPolicyApplyConfiguration {
-	return &PodGroupSchedulingPolicyApplyConfiguration{}
+func MultiPodGroupSchedulingPolicy() *MultiPodGroupSchedulingPolicyApplyConfiguration {
+	return &MultiPodGroupSchedulingPolicyApplyConfiguration{}
 }
 
 // WithBasic sets the Basic field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Basic field is set to the value of the last call.
-func (b *PodGroupSchedulingPolicyApplyConfiguration) WithBasic(value schedulingv1alpha2.BasicSchedulingPolicy) *PodGroupSchedulingPolicyApplyConfiguration {
+func (b *MultiPodGroupSchedulingPolicyApplyConfiguration) WithBasic(value schedulingv1alpha2.BasicSchedulingPolicy) *MultiPodGroupSchedulingPolicyApplyConfiguration {
 	b.Basic = &value
 	return b
 }
@@ -56,15 +53,7 @@ func (b *PodGroupSchedulingPolicyApplyConfiguration) WithBasic(value schedulingv
 // WithGang sets the Gang field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Gang field is set to the value of the last call.
-func (b *PodGroupSchedulingPolicyApplyConfiguration) WithGang(value *GangSchedulingPolicyApplyConfiguration) *PodGroupSchedulingPolicyApplyConfiguration {
+func (b *MultiPodGroupSchedulingPolicyApplyConfiguration) WithGang(value *GangSchedulingPolicyApplyConfiguration) *MultiPodGroupSchedulingPolicyApplyConfiguration {
 	b.Gang = value
-	return b
-}
-
-// WithGangMultiPodGroup sets the GangMultiPodGroup field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the GangMultiPodGroup field is set to the value of the last call.
-func (b *PodGroupSchedulingPolicyApplyConfiguration) WithGangMultiPodGroup(value schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy) *PodGroupSchedulingPolicyApplyConfiguration {
-	b.GangMultiPodGroup = &value
 	return b
 }

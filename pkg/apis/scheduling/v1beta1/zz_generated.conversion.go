@@ -120,11 +120,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*scheduling.PodGroupSpec)(nil), (*schedulingv1beta1.PodGroupSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_scheduling_PodGroupSpec_To_v1beta1_PodGroupSpec(a.(*scheduling.PodGroupSpec), b.(*schedulingv1beta1.PodGroupSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*schedulingv1beta1.PodGroupStatus)(nil), (*scheduling.PodGroupStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_PodGroupStatus_To_scheduling_PodGroupStatus(a.(*schedulingv1beta1.PodGroupStatus), b.(*scheduling.PodGroupStatus), scope)
 	}); err != nil {
@@ -230,13 +225,28 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddConversionFunc((*scheduling.MultiPodGroupSchedulingPolicy)(nil), (*schedulingv1beta1.PodGroupSchedulingPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(a.(*scheduling.MultiPodGroupSchedulingPolicy), b.(*schedulingv1beta1.PodGroupSchedulingPolicy), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddConversionFunc((*scheduling.PodGroupSchedulingPolicy)(nil), (*schedulingv1beta1.PodGroupSchedulingPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_scheduling_PodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(a.(*scheduling.PodGroupSchedulingPolicy), b.(*schedulingv1beta1.PodGroupSchedulingPolicy), scope)
 	}); err != nil {
 		return err
 	}
+	if err := s.AddConversionFunc((*scheduling.PodGroupSpec)(nil), (*schedulingv1beta1.PodGroupSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_scheduling_PodGroupSpec_To_v1beta1_PodGroupSpec(a.(*scheduling.PodGroupSpec), b.(*schedulingv1beta1.PodGroupSpec), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddConversionFunc((*scheduling.PodGroupTemplate)(nil), (*schedulingv1beta1.PodGroupTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_scheduling_PodGroupTemplate_To_v1beta1_PodGroupTemplate(a.(*scheduling.PodGroupTemplate), b.(*schedulingv1beta1.PodGroupTemplate), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*schedulingv1beta1.PodGroupSchedulingPolicy)(nil), (*scheduling.MultiPodGroupSchedulingPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(a.(*schedulingv1beta1.PodGroupSchedulingPolicy), b.(*scheduling.MultiPodGroupSchedulingPolicy), scope)
 	}); err != nil {
 		return err
 	}
@@ -435,13 +445,12 @@ func Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPo
 func autoConvert_scheduling_PodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(in *scheduling.PodGroupSchedulingPolicy, out *schedulingv1beta1.PodGroupSchedulingPolicy, s conversion.Scope) error {
 	out.Basic = (*schedulingv1beta1.BasicSchedulingPolicy)(unsafe.Pointer(in.Basic))
 	out.Gang = (*schedulingv1beta1.GangSchedulingPolicy)(unsafe.Pointer(in.Gang))
-	// WARNING: in.GangMultiPodGroup requires manual conversion: does not exist in peer-type
 	return nil
 }
 
 func autoConvert_v1beta1_PodGroupSpec_To_scheduling_PodGroupSpec(in *schedulingv1beta1.PodGroupSpec, out *scheduling.PodGroupSpec, s conversion.Scope) error {
 	out.PodGroupTemplateRef = (*scheduling.PodGroupTemplateReference)(unsafe.Pointer(in.PodGroupTemplateRef))
-	if err := Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
+	if err := Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
 		return err
 	}
 	out.SchedulingConstraints = (*scheduling.PodGroupSchedulingConstraints)(unsafe.Pointer(in.SchedulingConstraints))
@@ -459,7 +468,7 @@ func Convert_v1beta1_PodGroupSpec_To_scheduling_PodGroupSpec(in *schedulingv1bet
 
 func autoConvert_scheduling_PodGroupSpec_To_v1beta1_PodGroupSpec(in *scheduling.PodGroupSpec, out *schedulingv1beta1.PodGroupSpec, s conversion.Scope) error {
 	out.PodGroupTemplateRef = (*schedulingv1beta1.PodGroupTemplateReference)(unsafe.Pointer(in.PodGroupTemplateRef))
-	if err := Convert_scheduling_PodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
+	if err := Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
 		return err
 	}
 	out.SchedulingConstraints = (*schedulingv1beta1.PodGroupSchedulingConstraints)(unsafe.Pointer(in.SchedulingConstraints))
@@ -495,7 +504,7 @@ func Convert_scheduling_PodGroupStatus_To_v1beta1_PodGroupStatus(in *scheduling.
 
 func autoConvert_v1beta1_PodGroupTemplate_To_scheduling_PodGroupTemplate(in *schedulingv1beta1.PodGroupTemplate, out *scheduling.PodGroupTemplate, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
+	if err := Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
 		return err
 	}
 	out.SchedulingConstraints = (*scheduling.PodGroupSchedulingConstraints)(unsafe.Pointer(in.SchedulingConstraints))
@@ -513,7 +522,7 @@ func Convert_v1beta1_PodGroupTemplate_To_scheduling_PodGroupTemplate(in *schedul
 
 func autoConvert_scheduling_PodGroupTemplate_To_v1beta1_PodGroupTemplate(in *scheduling.PodGroupTemplate, out *schedulingv1beta1.PodGroupTemplate, s conversion.Scope) error {
 	out.Name = in.Name
-	if err := Convert_scheduling_PodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
+	if err := Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(&in.SchedulingPolicy, &out.SchedulingPolicy, s); err != nil {
 		return err
 	}
 	out.SchedulingConstraints = (*schedulingv1beta1.PodGroupSchedulingConstraints)(unsafe.Pointer(in.SchedulingConstraints))

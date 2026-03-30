@@ -53,4 +53,3 @@ spec:
       basic: {}
       gang:
         minCount: 1
-      gangMultiPodGroup: {}

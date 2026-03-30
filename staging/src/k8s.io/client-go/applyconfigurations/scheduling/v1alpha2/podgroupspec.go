@@ -33,7 +33,7 @@ type PodGroupSpecApplyConfiguration struct {
 	// SchedulingPolicy defines the scheduling policy for this instance of the PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
 	// This field is immutable.
-	SchedulingPolicy *PodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
+	SchedulingPolicy *MultiPodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
 	// This field is immutable.
@@ -76,7 +76,7 @@ type PodGroupSpecApplyConfiguration struct {
 	// is enabled.
 	Priority *int32 `json:"priority,omitempty"`
 	// ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
-	ParentRef *TypedLocalObjectReferenceApplyConfiguration `json:"parentRef,omitempty"`
+	ParentRef *ParentReferenceApplyConfiguration `json:"parentRef,omitempty"`
 }
 
 // PodGroupSpecApplyConfiguration constructs a declarative configuration of the PodGroupSpec type for use with
@@ -96,7 +96,7 @@ func (b *PodGroupSpecApplyConfiguration) WithPodGroupTemplateRef(value *PodGroup
 // WithSchedulingPolicy sets the SchedulingPolicy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SchedulingPolicy field is set to the value of the last call.
-func (b *PodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *PodGroupSchedulingPolicyApplyConfiguration) *PodGroupSpecApplyConfiguration {
+func (b *PodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *MultiPodGroupSchedulingPolicyApplyConfiguration) *PodGroupSpecApplyConfiguration {
 	b.SchedulingPolicy = value
 	return b
 }
@@ -149,7 +149,7 @@ func (b *PodGroupSpecApplyConfiguration) WithPriority(value int32) *PodGroupSpec
 // WithParentRef sets the ParentRef field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ParentRef field is set to the value of the last call.
-func (b *PodGroupSpecApplyConfiguration) WithParentRef(value *TypedLocalObjectReferenceApplyConfiguration) *PodGroupSpecApplyConfiguration {
+func (b *PodGroupSpecApplyConfiguration) WithParentRef(value *ParentReferenceApplyConfiguration) *PodGroupSpecApplyConfiguration {
 	b.ParentRef = value
 	return b
 }

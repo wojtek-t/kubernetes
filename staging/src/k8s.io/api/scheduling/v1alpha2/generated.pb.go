@@ -33,17 +33,19 @@ import (
 
 func (m *BasicSchedulingPolicy) Reset() { *m = BasicSchedulingPolicy{} }
 
-func (m *GangMultiPodGroupSchedulingPolicy) Reset() { *m = GangMultiPodGroupSchedulingPolicy{} }
-
 func (m *GangSchedulingPolicy) Reset() { *m = GangSchedulingPolicy{} }
 
 func (m *MultiPodGroup) Reset() { *m = MultiPodGroup{} }
 
 func (m *MultiPodGroupList) Reset() { *m = MultiPodGroupList{} }
 
+func (m *MultiPodGroupSchedulingPolicy) Reset() { *m = MultiPodGroupSchedulingPolicy{} }
+
 func (m *MultiPodGroupSpec) Reset() { *m = MultiPodGroupSpec{} }
 
 func (m *MultiPodGroupStatus) Reset() { *m = MultiPodGroupStatus{} }
+
+func (m *ParentReference) Reset() { *m = ParentReference{} }
 
 func (m *PodGroup) Reset() { *m = PodGroup{} }
 
@@ -93,29 +95,6 @@ func (m *BasicSchedulingPolicy) MarshalTo(dAtA []byte) (int, error) {
 }
 
 func (m *BasicSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	return len(dAtA) - i, nil
-}
-
-func (m *GangMultiPodGroupSchedulingPolicy) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *GangMultiPodGroupSchedulingPolicy) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *GangMultiPodGroupSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -249,6 +228,53 @@ func (m *MultiPodGroupList) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MultiPodGroupSchedulingPolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MultiPodGroupSchedulingPolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MultiPodGroupSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Gang != nil {
+		{
+			size, err := m.Gang.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Basic != nil {
+		{
+			size, err := m.Basic.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintGenerated(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *MultiPodGroupSpec) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -328,6 +354,34 @@ func (m *MultiPodGroupStatus) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0xa
 		}
 	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ParentReference) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ParentReference) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ParentReference) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	i -= len(m.Name)
+	copy(dAtA[i:], m.Name)
+	i = encodeVarintGenerated(dAtA, i, uint64(len(m.Name)))
+	i--
+	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
 
@@ -565,18 +619,6 @@ func (m *PodGroupSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error
 	_ = i
 	var l int
 	_ = l
-	if m.GangMultiPodGroup != nil {
-		{
-			size, err := m.GangMultiPodGroup.MarshalToSizedBuffer(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = encodeVarintGenerated(dAtA, i, uint64(size))
-		}
-		i--
-		dAtA[i] = 0x1a
-	}
 	if m.Gang != nil {
 		{
 			size, err := m.Gang.MarshalToSizedBuffer(dAtA[:i])
@@ -1129,15 +1171,6 @@ func (m *BasicSchedulingPolicy) Size() (n int) {
 	return n
 }
 
-func (m *GangMultiPodGroupSchedulingPolicy) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	return n
-}
-
 func (m *GangSchedulingPolicy) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1180,6 +1213,23 @@ func (m *MultiPodGroupList) Size() (n int) {
 	return n
 }
 
+func (m *MultiPodGroupSchedulingPolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Basic != nil {
+		l = m.Basic.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	if m.Gang != nil {
+		l = m.Gang.Size()
+		n += 1 + l + sovGenerated(uint64(l))
+	}
+	return n
+}
+
 func (m *MultiPodGroupSpec) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1207,6 +1257,17 @@ func (m *MultiPodGroupStatus) Size() (n int) {
 			n += 1 + l + sovGenerated(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *ParentReference) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	n += 1 + l + sovGenerated(uint64(l))
 	return n
 }
 
@@ -1303,10 +1364,6 @@ func (m *PodGroupSchedulingPolicy) Size() (n int) {
 	}
 	if m.Gang != nil {
 		l = m.Gang.Size()
-		n += 1 + l + sovGenerated(uint64(l))
-	}
-	if m.GangMultiPodGroup != nil {
-		l = m.GangMultiPodGroup.Size()
 		n += 1 + l + sovGenerated(uint64(l))
 	}
 	return n
@@ -1519,15 +1576,6 @@ func (this *BasicSchedulingPolicy) String() string {
 	}, "")
 	return s
 }
-func (this *GangMultiPodGroupSchedulingPolicy) String() string {
-	if this == nil {
-		return "nil"
-	}
-	s := strings.Join([]string{`&GangMultiPodGroupSchedulingPolicy{`,
-		`}`,
-	}, "")
-	return s
-}
 func (this *GangSchedulingPolicy) String() string {
 	if this == nil {
 		return "nil"
@@ -1566,13 +1614,24 @@ func (this *MultiPodGroupList) String() string {
 	}, "")
 	return s
 }
+func (this *MultiPodGroupSchedulingPolicy) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&MultiPodGroupSchedulingPolicy{`,
+		`Basic:` + strings.Replace(this.Basic.String(), "BasicSchedulingPolicy", "BasicSchedulingPolicy", 1) + `,`,
+		`Gang:` + strings.Replace(this.Gang.String(), "GangSchedulingPolicy", "GangSchedulingPolicy", 1) + `,`,
+		`}`,
+	}, "")
+	return s
+}
 func (this *MultiPodGroupSpec) String() string {
 	if this == nil {
 		return "nil"
 	}
 	s := strings.Join([]string{`&MultiPodGroupSpec{`,
-		`ParentRef:` + strings.Replace(this.ParentRef.String(), "TypedLocalObjectReference", "TypedLocalObjectReference", 1) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`ParentRef:` + strings.Replace(this.ParentRef.String(), "ParentReference", "ParentReference", 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1588,6 +1647,16 @@ func (this *MultiPodGroupStatus) String() string {
 	repeatedStringForConditions += "}"
 	s := strings.Join([]string{`&MultiPodGroupStatus{`,
 		`Conditions:` + repeatedStringForConditions + `,`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *ParentReference) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&ParentReference{`,
+		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1665,7 +1734,6 @@ func (this *PodGroupSchedulingPolicy) String() string {
 	s := strings.Join([]string{`&PodGroupSchedulingPolicy{`,
 		`Basic:` + strings.Replace(this.Basic.String(), "BasicSchedulingPolicy", "BasicSchedulingPolicy", 1) + `,`,
 		`Gang:` + strings.Replace(this.Gang.String(), "GangSchedulingPolicy", "GangSchedulingPolicy", 1) + `,`,
-		`GangMultiPodGroup:` + strings.Replace(this.GangMultiPodGroup.String(), "GangMultiPodGroupSchedulingPolicy", "GangMultiPodGroupSchedulingPolicy", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1681,13 +1749,13 @@ func (this *PodGroupSpec) String() string {
 	repeatedStringForResourceClaims += "}"
 	s := strings.Join([]string{`&PodGroupSpec{`,
 		`PodGroupTemplateRef:` + strings.Replace(this.PodGroupTemplateRef.String(), "PodGroupTemplateReference", "PodGroupTemplateReference", 1) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`SchedulingConstraints:` + strings.Replace(this.SchedulingConstraints.String(), "PodGroupSchedulingConstraints", "PodGroupSchedulingConstraints", 1) + `,`,
 		`ResourceClaims:` + repeatedStringForResourceClaims + `,`,
 		`DisruptionMode:` + valueToStringGenerated(this.DisruptionMode) + `,`,
 		`PriorityClassName:` + fmt.Sprintf("%v", this.PriorityClassName) + `,`,
 		`Priority:` + valueToStringGenerated(this.Priority) + `,`,
-		`ParentRef:` + strings.Replace(this.ParentRef.String(), "TypedLocalObjectReference", "TypedLocalObjectReference", 1) + `,`,
+		`ParentRef:` + strings.Replace(this.ParentRef.String(), "ParentReference", "ParentReference", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1724,7 +1792,7 @@ func (this *PodGroupTemplate) String() string {
 	repeatedStringForResourceClaims += "}"
 	s := strings.Join([]string{`&PodGroupTemplate{`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`SchedulingConstraints:` + strings.Replace(this.SchedulingConstraints.String(), "PodGroupSchedulingConstraints", "PodGroupSchedulingConstraints", 1) + `,`,
 		`ResourceClaims:` + repeatedStringForResourceClaims + `,`,
 		`DisruptionMode:` + valueToStringGenerated(this.DisruptionMode) + `,`,
@@ -1855,56 +1923,6 @@ func (m *BasicSchedulingPolicy) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: BasicSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		default:
-			iNdEx = preIndex
-			skippy, err := skipGenerated(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *GangMultiPodGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowGenerated
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: GangMultiPodGroupSchedulingPolicy: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GangMultiPodGroupSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		default:
@@ -2263,6 +2281,128 @@ func (m *MultiPodGroupList) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *MultiPodGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MultiPodGroupSchedulingPolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MultiPodGroupSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Basic", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Basic == nil {
+				m.Basic = &BasicSchedulingPolicy{}
+			}
+			if err := m.Basic.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gang", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Gang == nil {
+				m.Gang = &GangSchedulingPolicy{}
+			}
+			if err := m.Gang.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *MultiPodGroupSpec) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -2322,7 +2462,7 @@ func (m *MultiPodGroupSpec) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ParentRef == nil {
-				m.ParentRef = &TypedLocalObjectReference{}
+				m.ParentRef = &ParentReference{}
 			}
 			if err := m.ParentRef.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2444,6 +2584,88 @@ func (m *MultiPodGroupStatus) Unmarshal(dAtA []byte) error {
 			if err := m.Conditions[len(m.Conditions)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ParentReference) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ParentReference: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ParentReference: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3180,42 +3402,6 @@ func (m *PodGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field GangMultiPodGroup", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowGenerated
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthGenerated
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.GangMultiPodGroup == nil {
-				m.GangMultiPodGroup = &GangMultiPodGroupSchedulingPolicy{}
-			}
-			if err := m.GangMultiPodGroup.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -3520,7 +3706,7 @@ func (m *PodGroupSpec) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.ParentRef == nil {
-				m.ParentRef = &TypedLocalObjectReference{}
+				m.ParentRef = &ParentReference{}
 			}
 			if err := m.ParentRef.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

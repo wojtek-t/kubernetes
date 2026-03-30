@@ -1,10 +1,25 @@
+/*
+Copyright The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1alpha2
 
 import (
 	"k8s.io/apimachinery/pkg/conversion"
 	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
-	"k8s.io/kubernetes/pkg/apis/core"
-	"k8s.io/kubernetes/pkg/apis/scheduling"
+		"k8s.io/kubernetes/pkg/apis/scheduling"
 )
 
 func Convert_v1alpha2_PodGroupSpec_To_scheduling_PodGroupSpec(in *schedulingv1alpha2.PodGroupSpec, out *scheduling.PodGroupSpec, s conversion.Scope) error {
@@ -15,28 +30,22 @@ func Convert_scheduling_PodGroupTemplate_To_v1alpha2_PodGroupTemplate(in *schedu
 	return autoConvert_scheduling_PodGroupTemplate_To_v1alpha2_PodGroupTemplate(in, out, s)
 }
 
-func Convert_v1alpha2_TypedLocalObjectReference_To_core_TypedLocalObjectReference(in *schedulingv1alpha2.TypedLocalObjectReference, out *core.TypedLocalObjectReference, s conversion.Scope) error {
-	out.APIGroup = (*string)(&in.APIGroup)
-	out.Kind = in.Kind
+
+
+func Convert_v1alpha2_ParentReference_To_scheduling_ParentReference(in *schedulingv1alpha2.ParentReference, out *scheduling.ParentReference, s conversion.Scope) error {
 	out.Name = in.Name
 	return nil
 }
 
-func Convert_core_TypedLocalObjectReference_To_v1alpha2_TypedLocalObjectReference(in *core.TypedLocalObjectReference, out *schedulingv1alpha2.TypedLocalObjectReference, s conversion.Scope) error {
-	if in.APIGroup != nil {
-		out.APIGroup = *in.APIGroup
-	}
-	out.Kind = in.Kind
+func Convert_scheduling_ParentReference_To_v1alpha2_ParentReference(in *scheduling.ParentReference, out *schedulingv1alpha2.ParentReference, s conversion.Scope) error {
 	out.Name = in.Name
 	return nil
 }
 
-// Convert_v1alpha2_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPolicy handles the new field GangMultiPodGroup.
-func Convert_v1alpha2_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPolicy(in *schedulingv1alpha2.PodGroupSchedulingPolicy, out *scheduling.PodGroupSchedulingPolicy, s conversion.Scope) error {
-	return autoConvert_v1alpha2_PodGroupSchedulingPolicy_To_scheduling_PodGroupSchedulingPolicy(in, out, s)
+func Convert_v1alpha2_MultiPodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(in *schedulingv1alpha2.MultiPodGroupSchedulingPolicy, out *scheduling.MultiPodGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_v1alpha2_MultiPodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(in, out, s)
 }
 
-// Convert_scheduling_PodGroupSchedulingPolicy_To_v1alpha2_PodGroupSchedulingPolicy handles the new field GangMultiPodGroup.
-func Convert_scheduling_PodGroupSchedulingPolicy_To_v1alpha2_PodGroupSchedulingPolicy(in *scheduling.PodGroupSchedulingPolicy, out *schedulingv1alpha2.PodGroupSchedulingPolicy, s conversion.Scope) error {
-	return autoConvert_scheduling_PodGroupSchedulingPolicy_To_v1alpha2_PodGroupSchedulingPolicy(in, out, s)
+func Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1alpha2_MultiPodGroupSchedulingPolicy(in *scheduling.MultiPodGroupSchedulingPolicy, out *schedulingv1alpha2.MultiPodGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_scheduling_MultiPodGroupSchedulingPolicy_To_v1alpha2_MultiPodGroupSchedulingPolicy(in, out, s)
 }

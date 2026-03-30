@@ -185,7 +185,7 @@ type PodGroupTemplate struct {
 	// SchedulingPolicy defines the scheduling policy for this PodGroupTemplate.
 	//
 	// +required
-	SchedulingPolicy PodGroupSchedulingPolicy
+	SchedulingPolicy MultiPodGroupSchedulingPolicy
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroupTemplate.
 	// This field is only available when the TopologyAwareWorkloadScheduling feature gate is enabled.
@@ -262,15 +262,6 @@ type PodGroupSchedulingPolicy struct {
 	//
 	// +optional
 	Gang *GangSchedulingPolicy
-
-	// GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup
-	// and should be scheduled using all-or-nothing semantics.
-	GangMultiPodGroup *GangMultiPodGroupSchedulingPolicy
-}
-
-// GangMultiPodGroupSchedulingPolicy indicates that the pods in this group
-// are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.
-type GangMultiPodGroupSchedulingPolicy struct {
 }
 
 
@@ -403,7 +394,7 @@ type PodGroupSpec struct {
 	// This field is immutable.
 	//
 	// +required
-	SchedulingPolicy PodGroupSchedulingPolicy
+	SchedulingPolicy MultiPodGroupSchedulingPolicy
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
@@ -467,10 +458,9 @@ type PodGroupSpec struct {
 	// +featureGate=WorkloadAwarePreemption
 	// +optional
 	Priority *int32
-
 	// ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
 	// +optional
-	ParentRef *core.TypedLocalObjectReference
+	ParentRef *ParentReference
 }
 
 // PodGroupStatus represents information about the status of a pod group.
@@ -630,10 +620,10 @@ type MultiPodGroupList struct {
 type MultiPodGroupSpec struct {
 	// ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
 	// +optional
-	ParentRef *core.TypedLocalObjectReference
+	ParentRef *ParentReference
 
 	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
-	SchedulingPolicy PodGroupSchedulingPolicy
+	SchedulingPolicy MultiPodGroupSchedulingPolicy
 }
 
 // MultiPodGroupStatus represents information about the status of a MultiPodGroup.
@@ -641,4 +631,27 @@ type MultiPodGroupStatus struct {
 	// Conditions represent the latest observations of the MultiPodGroup's state.
 	// +optional
 	Conditions []metav1.Condition
+}
+
+// ParentReference contains a reference to the parent MultiPodGroup.
+type ParentReference struct {
+	// Name of the parent MultiPodGroup.
+	Name string
+}
+
+// MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup.
+// Exactly one policy must be set.
+// +union
+type MultiPodGroupSchedulingPolicy struct {
+	// Basic specifies that the pods in this group should be scheduled using
+	// standard Kubernetes scheduling behavior.
+	//
+	// +optional
+	Basic *BasicSchedulingPolicy
+
+	// Gang specifies that the pods in this group should be scheduled using
+	// all-or-nothing semantics.
+	//
+	// +optional
+	Gang *GangSchedulingPolicy
 }

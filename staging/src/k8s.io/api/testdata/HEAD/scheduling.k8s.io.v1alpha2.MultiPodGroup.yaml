@@ -34,14 +34,11 @@ metadata:
   uid: uidValue
 spec:
   parentRef:
-    apiGroup: apiGroupValue
-    kind: kindValue
     name: nameValue
   schedulingPolicy:
     basic: {}
     gang:
       minCount: 1
-    gangMultiPodGroup: {}
 status:
   conditions:
   - lastTransitionTime: "2004-01-01T01:01:01Z"

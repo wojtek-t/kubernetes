@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	schedulingv1alpha2listers "k8s.io/client-go/listers/scheduling/v1alpha2"
 
-	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/apis/scheduling"
 )
 
@@ -81,7 +80,7 @@ func (p *Plugin) Validate(ctx context.Context, a admission.Attributes, o admissi
 	}
 
 	namespace := a.GetNamespace()
-	var parentRef *core.TypedLocalObjectReference
+	var parentRef *scheduling.ParentReference
 
 	switch o := obj.(type) {
 	case *scheduling.PodGroup:
