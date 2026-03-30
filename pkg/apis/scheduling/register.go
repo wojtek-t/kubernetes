@@ -52,6 +52,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PriorityClassList{},
 		&Workload{},
 		&WorkloadList{},
+		&MultiPodGroup{},
+		&MultiPodGroupList{},
 	)
 	return nil
 }

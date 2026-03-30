@@ -28,6 +28,7 @@ import (
 
 type SchedulingV1alpha2Interface interface {
 	RESTClient() rest.Interface
+	MultiPodGroupsGetter
 	PodGroupsGetter
 	WorkloadsGetter
 }
@@ -35,6 +36,10 @@ type SchedulingV1alpha2Interface interface {
 // SchedulingV1alpha2Client is used to interact with features provided by the scheduling.k8s.io group.
 type SchedulingV1alpha2Client struct {
 	restClient rest.Interface
+}
+
+func (c *SchedulingV1alpha2Client) MultiPodGroups(namespace string) MultiPodGroupInterface {
+	return newMultiPodGroups(c, namespace)
 }
 
 func (c *SchedulingV1alpha2Client) PodGroups(namespace string) PodGroupInterface {

@@ -1,6 +1,6 @@
 {
   "kind": "Workload",
-  "apiVersion": "scheduling.k8s.io/v1alpha2",
+  "apiVersion": "scheduling.k8s.io/v1beta1",
   "metadata": {
     "name": "nameValue",
     "generateName": "generateNameValue",
@@ -56,8 +56,7 @@
           "basic": {},
           "gang": {
             "minCount": 1
-          },
-          "gangMultiPodGroup": {}
+          }
         },
         "schedulingConstraints": {
           "topology": [

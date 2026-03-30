@@ -34,6 +34,9 @@ type PodGroupSchedulingPolicyApplyConfiguration struct {
 	// Gang specifies that the pods in this group should be scheduled using
 	// all-or-nothing semantics.
 	Gang *GangSchedulingPolicyApplyConfiguration `json:"gang,omitempty"`
+	// GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup
+	// and should be scheduled using all-or-nothing semantics.
+	GangMultiPodGroup *schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy `json:"gangMultiPodGroup,omitempty"`
 }
 
 // PodGroupSchedulingPolicyApplyConfiguration constructs a declarative configuration of the PodGroupSchedulingPolicy type for use with
@@ -55,5 +58,13 @@ func (b *PodGroupSchedulingPolicyApplyConfiguration) WithBasic(value schedulingv
 // If called multiple times, the Gang field is set to the value of the last call.
 func (b *PodGroupSchedulingPolicyApplyConfiguration) WithGang(value *GangSchedulingPolicyApplyConfiguration) *PodGroupSchedulingPolicyApplyConfiguration {
 	b.Gang = value
+	return b
+}
+
+// WithGangMultiPodGroup sets the GangMultiPodGroup field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the GangMultiPodGroup field is set to the value of the last call.
+func (b *PodGroupSchedulingPolicyApplyConfiguration) WithGangMultiPodGroup(value schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy) *PodGroupSchedulingPolicyApplyConfiguration {
+	b.GangMultiPodGroup = &value
 	return b
 }

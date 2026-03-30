@@ -1142,7 +1142,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		schedulingv1.PriorityClass{}.OpenAPIModelName():                                                                 schema_k8sio_api_scheduling_v1_PriorityClass(ref),
 		schedulingv1.PriorityClassList{}.OpenAPIModelName():                                                             schema_k8sio_api_scheduling_v1_PriorityClassList(ref),
 		schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName():                                                   schema_k8sio_api_scheduling_v1alpha2_BasicSchedulingPolicy(ref),
+		schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy{}.OpenAPIModelName():                                       schema_k8sio_api_scheduling_v1alpha2_GangMultiPodGroupSchedulingPolicy(ref),
 		schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName():                                                    schema_k8sio_api_scheduling_v1alpha2_GangSchedulingPolicy(ref),
+		schedulingv1alpha2.MultiPodGroup{}.OpenAPIModelName():                                                           schema_k8sio_api_scheduling_v1alpha2_MultiPodGroup(ref),
+		schedulingv1alpha2.MultiPodGroupList{}.OpenAPIModelName():                                                       schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupList(ref),
+		schedulingv1alpha2.MultiPodGroupSpec{}.OpenAPIModelName():                                                       schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSpec(ref),
+		schedulingv1alpha2.MultiPodGroupStatus{}.OpenAPIModelName():                                                     schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupStatus(ref),
 		schedulingv1alpha2.PodGroup{}.OpenAPIModelName():                                                                schema_k8sio_api_scheduling_v1alpha2_PodGroup(ref),
 		schedulingv1alpha2.PodGroupList{}.OpenAPIModelName():                                                            schema_k8sio_api_scheduling_v1alpha2_PodGroupList(ref),
 		schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName():                                                   schema_k8sio_api_scheduling_v1alpha2_PodGroupResourceClaim(ref),
@@ -54690,6 +54695,17 @@ func schema_k8sio_api_scheduling_v1alpha2_BasicSchedulingPolicy(ref common.Refer
 	}
 }
 
+func schema_k8sio_api_scheduling_v1alpha2_GangMultiPodGroupSchedulingPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GangMultiPodGroupSchedulingPolicy indicates that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
 func schema_k8sio_api_scheduling_v1alpha2_GangSchedulingPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -54709,6 +54725,176 @@ func schema_k8sio_api_scheduling_v1alpha2_GangSchedulingPolicy(ref common.Refere
 				Required: []string{"minCount"},
 			},
 		},
+	}
+}
+
+func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroup(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MultiPodGroup allows for expressing scheduling constraints that should be used when managing the lifecycle of workloads from the scheduling perspective, including scheduling, preemption, eviction and other phases.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
+							Default:     map[string]interface{}{},
+							Ref:         ref(metav1.ObjectMeta{}.OpenAPIModelName()),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Spec defines the desired state of the MultiPodGroup.",
+							Default:     map[string]interface{}{},
+							Ref:         ref(schedulingv1alpha2.MultiPodGroupSpec{}.OpenAPIModelName()),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Status represents the current observed state of the MultiPodGroup.",
+							Default:     map[string]interface{}{},
+							Ref:         ref(schedulingv1alpha2.MultiPodGroupStatus{}.OpenAPIModelName()),
+						},
+					},
+				},
+				Required: []string{"spec"},
+			},
+		},
+		Dependencies: []string{
+			schedulingv1alpha2.MultiPodGroupSpec{}.OpenAPIModelName(), schedulingv1alpha2.MultiPodGroupStatus{}.OpenAPIModelName(), metav1.ObjectMeta{}.OpenAPIModelName()},
+	}
+}
+
+func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MultiPodGroupList contains a list of MultiPodGroup resources.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard list metadata.",
+							Default:     map[string]interface{}{},
+							Ref:         ref(metav1.ListMeta{}.OpenAPIModelName()),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items is the list of MultiPodGroups.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref(schedulingv1alpha2.MultiPodGroup{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			schedulingv1alpha2.MultiPodGroup{}.OpenAPIModelName(), metav1.ListMeta{}.OpenAPIModelName()},
+	}
+}
+
+func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MultiPodGroupSpec defines the desired state of a MultiPodGroup.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"parentRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.",
+							Ref:         ref(schedulingv1alpha2.TypedLocalObjectReference{}.OpenAPIModelName()),
+						},
+					},
+					"schedulingPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup. This field is immutable.",
+							Default:     map[string]interface{}{},
+							Ref:         ref(schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()),
+						},
+					},
+				},
+				Required: []string{"schedulingPolicy"},
+			},
+		},
+		Dependencies: []string{
+			schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.TypedLocalObjectReference{}.OpenAPIModelName()},
+	}
+}
+
+func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "MultiPodGroupStatus represents information about the status of a MultiPodGroup.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"conditions": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-map-keys": []interface{}{
+									"type",
+								},
+								"x-kubernetes-list-type":       "map",
+								"x-kubernetes-patch-merge-key": "type",
+								"x-kubernetes-patch-strategy":  "merge",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions represent the latest observations of the MultiPodGroup's state.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref(metav1.Condition{}.OpenAPIModelName()),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			metav1.Condition{}.OpenAPIModelName()},
 	}
 }
 
@@ -54932,6 +55118,12 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSchedulingPolicy(ref common.Re
 							Ref:         ref(schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
+					"gangMultiPodGroup": {
+						SchemaProps: spec.SchemaProps{
+							Description: "GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
+							Ref:         ref(schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy{}.OpenAPIModelName()),
+						},
+					},
 				},
 			},
 			VendorExtensible: spec.VendorExtensible{
@@ -54939,8 +55131,9 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSchedulingPolicy(ref common.Re
 					"x-kubernetes-unions": []interface{}{
 						map[string]interface{}{
 							"fields-to-discriminateBy": map[string]interface{}{
-								"basic": "Basic",
-								"gang":  "Gang",
+								"basic":             "Basic",
+								"gang":              "Gang",
+								"gangMultiPodGroup": "GangMultiPodGroup",
 							},
 						},
 					},
@@ -54948,7 +55141,7 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSchedulingPolicy(ref common.Re
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName()},
+			schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.GangMultiPodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName()},
 	}
 }
 
@@ -55025,12 +55218,18 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSpec(ref common.ReferenceCallb
 							Format:      "int32",
 						},
 					},
+					"parentRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ParentRef references an optional MultiPodGroup that this PodGroup belongs to.",
+							Ref:         ref(schedulingv1alpha2.TypedLocalObjectReference{}.OpenAPIModelName()),
+						},
+					},
 				},
 				Required: []string{"schedulingPolicy"},
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupTemplateReference{}.OpenAPIModelName()},
+			schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupTemplateReference{}.OpenAPIModelName(), schedulingv1alpha2.TypedLocalObjectReference{}.OpenAPIModelName()},
 	}
 }
 

@@ -54,6 +54,7 @@ import (
 	"k8s.io/kubernetes/plugin/pkg/admission/podtolerationrestriction"
 	"k8s.io/kubernetes/plugin/pkg/admission/podtopologylabels"
 	podpriority "k8s.io/kubernetes/plugin/pkg/admission/priority"
+	"k8s.io/kubernetes/plugin/pkg/admission/scheduling/multipodgroup"
 	"k8s.io/kubernetes/plugin/pkg/admission/runtimeclass"
 	"k8s.io/kubernetes/plugin/pkg/admission/scheduling/podgroupprotection"
 	"k8s.io/kubernetes/plugin/pkg/admission/security/podsecurity"
@@ -85,7 +86,8 @@ var AllOrderedPlugins = []string{
 	imagepolicy.PluginName,                  // ImagePolicyWebhook
 	podsecurity.PluginName,                  // PodSecurity
 	podnodeselector.PluginName,              // PodNodeSelector
-	podpriority.PluginName,                  // Priority
+	podpriority.PluginName,
+			multipodgroup.PluginName,                  // Priority
 	defaulttolerationseconds.PluginName,     // DefaultTolerationSeconds
 	podtolerationrestriction.PluginName,     // PodTolerationRestriction
 	eventratelimit.PluginName,               // EventRateLimit
@@ -150,6 +152,7 @@ func RegisterAllAdmissionPlugins(plugins *admission.Plugins) {
 	resourcequota.Register(plugins)
 	podsecurity.Register(plugins)
 	podpriority.Register(plugins)
+	multipodgroup.Register(plugins)
 	serviceaccount.Register(plugins)
 	setdefault.Register(plugins)
 	resize.Register(plugins)

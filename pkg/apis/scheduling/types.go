@@ -244,6 +244,7 @@ type PodGroupTemplate struct {
 	// +featureGate=WorkloadAwarePreemption
 	// +optional
 	Priority *int32
+
 }
 
 // PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup.
@@ -261,7 +262,17 @@ type PodGroupSchedulingPolicy struct {
 	//
 	// +optional
 	Gang *GangSchedulingPolicy
+
+	// GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup
+	// and should be scheduled using all-or-nothing semantics.
+	GangMultiPodGroup *GangMultiPodGroupSchedulingPolicy
 }
+
+// GangMultiPodGroupSchedulingPolicy indicates that the pods in this group
+// are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.
+type GangMultiPodGroupSchedulingPolicy struct {
+}
+
 
 // BasicSchedulingPolicy indicates that standard Kubernetes
 // scheduling behavior should be used.
@@ -456,6 +467,10 @@ type PodGroupSpec struct {
 	// +featureGate=WorkloadAwarePreemption
 	// +optional
 	Priority *int32
+
+	// ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
+	// +optional
+	ParentRef *core.TypedLocalObjectReference
 }
 
 // PodGroupStatus represents information about the status of a pod group.
@@ -579,4 +594,51 @@ type TopologyConstraint struct {
 	//
 	// +required
 	Key string
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// MultiPodGroup allows for expressing scheduling constraints that should be used
+// when managing the lifecycle of workloads from the scheduling perspective,
+// including scheduling, preemption, eviction and other phases.
+type MultiPodGroup struct {
+	metav1.TypeMeta
+	// +optional
+	metav1.ObjectMeta
+
+	// Spec defines the desired state of the MultiPodGroup.
+	Spec MultiPodGroupSpec
+
+	// Status represents the current observed state of the MultiPodGroup.
+	// +optional
+	Status MultiPodGroupStatus
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// MultiPodGroupList contains a list of MultiPodGroup resources.
+type MultiPodGroupList struct {
+	metav1.TypeMeta
+	// +optional
+	metav1.ListMeta
+
+	// Items is the list of MultiPodGroups.
+	Items []MultiPodGroup
+}
+
+// MultiPodGroupSpec defines the desired state of a MultiPodGroup.
+type MultiPodGroupSpec struct {
+	// ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
+	// +optional
+	ParentRef *core.TypedLocalObjectReference
+
+	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
+	SchedulingPolicy PodGroupSchedulingPolicy
+}
+
+// MultiPodGroupStatus represents information about the status of a MultiPodGroup.
+type MultiPodGroupStatus struct {
+	// Conditions represent the latest observations of the MultiPodGroup's state.
+	// +optional
+	Conditions []metav1.Condition
 }

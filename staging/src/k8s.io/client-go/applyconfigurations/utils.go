@@ -1844,6 +1844,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		// Group=scheduling.k8s.io, Version=v1alpha2
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("GangSchedulingPolicy"):
 		return &applyconfigurationsschedulingv1alpha2.GangSchedulingPolicyApplyConfiguration{}
+	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroup"):
+		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupApplyConfiguration{}
+	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroupSpec"):
+		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupSpecApplyConfiguration{}
+	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroupStatus"):
+		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupStatusApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroup"):
 		return &applyconfigurationsschedulingv1alpha2.PodGroupApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroupResourceClaim"):

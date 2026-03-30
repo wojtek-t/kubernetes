@@ -27,8 +27,33 @@ func (in BasicSchedulingPolicy) OpenAPIModelName() string {
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.
+func (in GangMultiPodGroupSchedulingPolicy) OpenAPIModelName() string {
+	return "io.k8s.api.scheduling.v1alpha2.GangMultiPodGroupSchedulingPolicy"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
 func (in GangSchedulingPolicy) OpenAPIModelName() string {
 	return "io.k8s.api.scheduling.v1alpha2.GangSchedulingPolicy"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in MultiPodGroup) OpenAPIModelName() string {
+	return "io.k8s.api.scheduling.v1alpha2.MultiPodGroup"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in MultiPodGroupList) OpenAPIModelName() string {
+	return "io.k8s.api.scheduling.v1alpha2.MultiPodGroupList"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in MultiPodGroupSpec) OpenAPIModelName() string {
+	return "io.k8s.api.scheduling.v1alpha2.MultiPodGroupSpec"
+}
+
+// OpenAPIModelName returns the OpenAPI model name for this type.
+func (in MultiPodGroupStatus) OpenAPIModelName() string {
+	return "io.k8s.api.scheduling.v1alpha2.MultiPodGroupStatus"
 }
 
 // OpenAPIModelName returns the OpenAPI model name for this type.

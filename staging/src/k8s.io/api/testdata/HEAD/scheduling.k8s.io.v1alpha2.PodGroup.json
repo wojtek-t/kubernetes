@@ -54,7 +54,8 @@
       "basic": {},
       "gang": {
         "minCount": 1
-      }
+      },
+      "gangMultiPodGroup": {}
     },
     "schedulingConstraints": {
       "topology": [
@@ -72,7 +73,12 @@
     ],
     "disruptionMode": "disruptionModeValue",
     "priorityClassName": "priorityClassNameValue",
-    "priority": 7
+    "priority": 7,
+    "parentRef": {
+      "apiGroup": "apiGroupValue",
+      "kind": "kindValue",
+      "name": "nameValue"
+    }
   },
   "status": {
     "conditions": [

@@ -35,6 +35,14 @@ func (BasicSchedulingPolicy) SwaggerDoc() map[string]string {
 	return map_BasicSchedulingPolicy
 }
 
+var map_GangMultiPodGroupSchedulingPolicy = map[string]string{
+	"": "GangMultiPodGroupSchedulingPolicy indicates that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
+}
+
+func (GangMultiPodGroupSchedulingPolicy) SwaggerDoc() map[string]string {
+	return map_GangMultiPodGroupSchedulingPolicy
+}
+
 var map_GangSchedulingPolicy = map[string]string{
 	"":         "GangSchedulingPolicy defines the parameters for gang scheduling.",
 	"minCount": "MinCount is the minimum number of pods that must be schedulable or scheduled at the same time for the scheduler to admit the entire group. It must be a positive integer.",
@@ -42,6 +50,46 @@ var map_GangSchedulingPolicy = map[string]string{
 
 func (GangSchedulingPolicy) SwaggerDoc() map[string]string {
 	return map_GangSchedulingPolicy
+}
+
+var map_MultiPodGroup = map[string]string{
+	"":         "MultiPodGroup allows for expressing scheduling constraints that should be used when managing the lifecycle of workloads from the scheduling perspective, including scheduling, preemption, eviction and other phases.",
+	"metadata": "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
+	"spec":     "Spec defines the desired state of the MultiPodGroup.",
+	"status":   "Status represents the current observed state of the MultiPodGroup.",
+}
+
+func (MultiPodGroup) SwaggerDoc() map[string]string {
+	return map_MultiPodGroup
+}
+
+var map_MultiPodGroupList = map[string]string{
+	"":         "MultiPodGroupList contains a list of MultiPodGroup resources.",
+	"metadata": "Standard list metadata.",
+	"items":    "Items is the list of MultiPodGroups.",
+}
+
+func (MultiPodGroupList) SwaggerDoc() map[string]string {
+	return map_MultiPodGroupList
+}
+
+var map_MultiPodGroupSpec = map[string]string{
+	"":                 "MultiPodGroupSpec defines the desired state of a MultiPodGroup.",
+	"parentRef":        "ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.",
+	"schedulingPolicy": "SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup. This field is immutable.",
+}
+
+func (MultiPodGroupSpec) SwaggerDoc() map[string]string {
+	return map_MultiPodGroupSpec
+}
+
+var map_MultiPodGroupStatus = map[string]string{
+	"":           "MultiPodGroupStatus represents information about the status of a MultiPodGroup.",
+	"conditions": "Conditions represent the latest observations of the MultiPodGroup's state.",
+}
+
+func (MultiPodGroupStatus) SwaggerDoc() map[string]string {
+	return map_MultiPodGroupStatus
 }
 
 var map_PodGroup = map[string]string{
@@ -96,9 +144,10 @@ func (PodGroupSchedulingConstraints) SwaggerDoc() map[string]string {
 }
 
 var map_PodGroupSchedulingPolicy = map[string]string{
-	"":      "PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup. Exactly one policy must be set.",
-	"basic": "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
-	"gang":  "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
+	"":                  "PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup. Exactly one policy must be set.",
+	"basic":             "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
+	"gang":              "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
+	"gangMultiPodGroup": "GangMultiPodGroup specifies that the pods in this group are part of a MultiPodGroup and should be scheduled using all-or-nothing semantics.",
 }
 
 func (PodGroupSchedulingPolicy) SwaggerDoc() map[string]string {
@@ -114,6 +163,7 @@ var map_PodGroupSpec = map[string]string{
 	"disruptionMode":        "DisruptionMode defines the mode in which a given PodGroup can be disrupted. Controllers are expected to fill this field by copying it from a PodGroupTemplate. One of Pod, PodGroup. Defaults to Pod if unset. This field is immutable. This field is available only when the WorkloadAwarePreemption feature gate is enabled.",
 	"priorityClassName":     "PriorityClassName defines the priority that should be considered when scheduling this pod group. Controllers are expected to fill this field by copying it from a PodGroupTemplate. Otherwise, it is validated and resolved similarly to the PriorityClassName on PodGroupTemplate (i.e. if no priority class is specified, admission control can set this to the global default priority class if it exists. Otherwise, the pod group's priority will be zero). This field is immutable. This field is available only when the WorkloadAwarePreemption feature gate is enabled.",
 	"priority":              "Priority is the value of priority of this pod group. Various system components use this field to find the priority of the pod group. When Priority Admission Controller is enabled, it prevents users from setting this field. The admission controller populates this field from PriorityClassName. The higher the value, the higher the priority. This field is immutable. This field is available only when the WorkloadAwarePreemption feature gate is enabled.",
+	"parentRef":             "ParentRef references an optional MultiPodGroup that this PodGroup belongs to.",
 }
 
 func (PodGroupSpec) SwaggerDoc() map[string]string {
