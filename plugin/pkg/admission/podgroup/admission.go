@@ -27,7 +27,7 @@ import (
 	genericadmissioninitializer "k8s.io/apiserver/pkg/admission/initializer"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	schedulingv1alpha2listers "k8s.io/client-go/listers/scheduling/v1alpha2"
+	schedulingv1beta1listers "k8s.io/client-go/listers/scheduling/v1beta1"
 	"k8s.io/component-base/featuregate"
 	scheduling "k8s.io/kubernetes/pkg/apis/scheduling"
 	"k8s.io/kubernetes/pkg/features"
@@ -52,7 +52,7 @@ var _ genericadmissioninitializer.WantsFeatures = &PodGroupWorkloadExists{}
 // referenced Workload exists and contains the referenced PodGroupTemplate.
 type PodGroupWorkloadExists struct {
 	*admission.Handler
-	workloadLister         schedulingv1alpha2listers.WorkloadLister
+	workloadLister         schedulingv1beta1listers.WorkloadLister
 	client                 kubernetes.Interface
 	inspectedFeatureGates  bool
 	genericWorkloadEnabled bool
@@ -81,7 +81,7 @@ func (p *PodGroupWorkloadExists) SetExternalKubeInformerFactory(f informers.Shar
 	if !p.genericWorkloadEnabled {
 		return
 	}
-	workloadInformer := f.Scheduling().V1alpha2().Workloads()
+	workloadInformer := f.Scheduling().V1beta1().Workloads()
 	p.SetReadyFunc(workloadInformer.Informer().HasSynced)
 	p.workloadLister = workloadInformer.Lister()
 }
@@ -133,7 +133,7 @@ func (p *PodGroupWorkloadExists) Validate(ctx context.Context, a admission.Attri
 	workloadRef := podGroup.Spec.PodGroupTemplateRef.Workload
 	workload, err := p.workloadLister.Workloads(a.GetNamespace()).Get(workloadRef.WorkloadName)
 	if apierrors.IsNotFound(err) {
-		workload, err = p.client.SchedulingV1alpha2().Workloads(
+		workload, err = p.client.SchedulingV1beta1().Workloads(
 			a.GetNamespace()).Get(ctx, workloadRef.WorkloadName, metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
 			return admission.NewForbidden(a,

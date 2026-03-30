@@ -19,7 +19,7 @@ package admission
 import (
 	"testing"
 
-	schedulingapi "k8s.io/api/scheduling/v1alpha2"
+	schedulingapi "k8s.io/api/scheduling/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
@@ -109,17 +109,17 @@ func TestPodGroupAdmission(t *testing.T) {
 
 			if tt.workload != nil {
 				tt.workload.Namespace = ns
-				if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, tt.workload, metav1.CreateOptions{}); err != nil {
+				if _, err := cs.SchedulingV1beta1().Workloads(ns).Create(testCtx.Ctx, tt.workload, metav1.CreateOptions{}); err != nil {
 					t.Fatalf("Failed to create Workload: %v", err)
 				}
 				if tt.deleteWorkload {
-					if err := cs.SchedulingV1alpha2().Workloads(ns).Delete(testCtx.Ctx, tt.workload.Name, metav1.DeleteOptions{}); err != nil {
+					if err := cs.SchedulingV1beta1().Workloads(ns).Delete(testCtx.Ctx, tt.workload.Name, metav1.DeleteOptions{}); err != nil {
 						t.Fatalf("Failed to delete Workload: %v", err)
 					}
 				}
 			}
 
-			_, err := cs.SchedulingV1alpha2().PodGroups(ns).Create(testCtx.Ctx, tt.podGroup(ns), metav1.CreateOptions{})
+			_, err := cs.SchedulingV1beta1().PodGroups(ns).Create(testCtx.Ctx, tt.podGroup(ns), metav1.CreateOptions{})
 			if tt.expectError {
 				if err == nil {
 					t.Fatal("Expected PodGroup creation to be rejected, but it succeeded")

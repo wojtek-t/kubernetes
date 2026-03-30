@@ -19,7 +19,7 @@ package podgroup
 import (
 	"testing"
 
-	schedulingv1alpha2 "k8s.io/api/scheduling/v1alpha2"
+	schedulingv1beta1 "k8s.io/api/scheduling/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -70,15 +70,15 @@ func withWorkloadRef(workloadName, templateName string) func(*scheduling.PodGrou
 	}
 }
 
-func newWorkload(name string, templateNames ...string) *schedulingv1alpha2.Workload {
-	w := &schedulingv1alpha2.Workload{
+func newWorkload(name string, templateNames ...string) *schedulingv1beta1.Workload {
+	w := &schedulingv1beta1.Workload{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: testNamespace},
-		Spec: schedulingv1alpha2.WorkloadSpec{
-			PodGroupTemplates: make([]schedulingv1alpha2.PodGroupTemplate, 0, len(templateNames)),
+		Spec: schedulingv1beta1.WorkloadSpec{
+			PodGroupTemplates: make([]schedulingv1beta1.PodGroupTemplate, 0, len(templateNames)),
 		},
 	}
 	for _, tn := range templateNames {
-		w.Spec.PodGroupTemplates = append(w.Spec.PodGroupTemplates, schedulingv1alpha2.PodGroupTemplate{Name: tn})
+		w.Spec.PodGroupTemplates = append(w.Spec.PodGroupTemplates, schedulingv1beta1.PodGroupTemplate{Name: tn})
 	}
 	return w
 }
@@ -108,7 +108,7 @@ func TestValidate(t *testing.T) {
 
 	cases := map[string]struct {
 		enableFeatureGate bool
-		workloads         []*schedulingv1alpha2.Workload
+		workloads         []*schedulingv1beta1.Workload
 		attrs             admission.Attributes
 		wantErr           bool
 	}{
@@ -129,7 +129,7 @@ func TestValidate(t *testing.T) {
 		},
 		"workload found, template exists": {
 			enableFeatureGate: true,
-			workloads:         []*schedulingv1alpha2.Workload{workload},
+			workloads:         []*schedulingv1beta1.Workload{workload},
 			attrs:             newPodGroup(),
 		},
 		"workload not found": {
@@ -139,13 +139,13 @@ func TestValidate(t *testing.T) {
 		},
 		"workload being deleted": {
 			enableFeatureGate: true,
-			workloads:         []*schedulingv1alpha2.Workload{deletingWorkload},
+			workloads:         []*schedulingv1beta1.Workload{deletingWorkload},
 			attrs:             newPodGroup(withWorkloadRef("deleting-workload", testTemplateName)),
 			wantErr:           true,
 		},
 		"workload found but template name does not match": {
 			enableFeatureGate: true,
-			workloads:         []*schedulingv1alpha2.Workload{workload},
+			workloads:         []*schedulingv1beta1.Workload{workload},
 			attrs:             newPodGroup(withWorkloadRef(testWorkloadName, "non-existent-template")),
 			wantErr:           true,
 		},
@@ -182,7 +182,7 @@ func TestValidate(t *testing.T) {
 			informerFactory := informers.NewSharedInformerFactory(nil, controller.NoResyncPeriodFunc())
 			plugin.SetExternalKubeInformerFactory(informerFactory)
 			for _, w := range tc.workloads {
-				if err := informerFactory.Scheduling().V1alpha2().Workloads().Informer().GetStore().Add(w); err != nil {
+				if err := informerFactory.Scheduling().V1beta1().Workloads().Informer().GetStore().Add(w); err != nil {
 					t.Fatalf("failed to add Workload: %v", err)
 				}
 			}

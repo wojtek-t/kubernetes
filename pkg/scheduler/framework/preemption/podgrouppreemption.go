@@ -24,9 +24,9 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1"
-	schedulingapi "k8s.io/api/scheduling/v1alpha2"
+	schedulingapi "k8s.io/api/scheduling/v1beta1"
 	policylisters "k8s.io/client-go/listers/policy/v1"
-	schedulinglisters "k8s.io/client-go/listers/scheduling/v1alpha2"
+	schedulinglisters "k8s.io/client-go/listers/scheduling/v1beta1"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/names"
 
 	"k8s.io/klog/v2"
@@ -49,7 +49,7 @@ func NewPodGroupEvaluator(fh fwk.Handle, executor *Executor) *PodGroupEvaluator 
 	return &PodGroupEvaluator{
 		Handle:         fh,
 		pdbLister:      fh.SharedInformerFactory().Policy().V1().PodDisruptionBudgets().Lister(),
-		podGroupLister: fh.SharedInformerFactory().Scheduling().V1alpha2().PodGroups().Lister(),
+		podGroupLister: fh.SharedInformerFactory().Scheduling().V1beta1().PodGroups().Lister(),
 		Executor:       executor,
 	}
 }
