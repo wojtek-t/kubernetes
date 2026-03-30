@@ -22,7 +22,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	v1 "k8s.io/api/core/v1"
-	schedulingapi "k8s.io/api/scheduling/v1alpha2"
+	schedulingapi "k8s.io/api/scheduling/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/informers"
@@ -151,6 +151,77 @@ func Test_isSchedulableAfterPodGroupAdded(t *testing.T) {
 	}
 }
 
+func Test_isSchedulableAfterPodGroupUpdated(t *testing.T) {
+	tests := []struct {
+			name         string
+			pod          *v1.Pod
+			oldPodGroup  *schedulingapi.PodGroup
+			newPodGroup  *schedulingapi.PodGroup
+			expectedHint fwk.QueueingHint
+		}{
+			{
+				name:         "update a pod group with smaller MinCount which matches the pod's pod group name",
+				pod:          st.MakePod().Name("p").PodGroupName("pg").Obj(),
+				oldPodGroup:  st.MakePodGroup().Name("pg").MinCount(3).TemplateRef("t", "w").Obj(),
+				newPodGroup:  st.MakePodGroup().Name("pg").MinCount(2).TemplateRef("t", "w").Obj(),
+				expectedHint: fwk.Queue,
+			},
+			{
+				name:         "update a pod group with larger MinCount which matches the pod's pod group name",
+				pod:          st.MakePod().Name("p").PodGroupName("pg").Obj(),
+				oldPodGroup:  st.MakePodGroup().Name("pg").MinCount(3).TemplateRef("t", "w").Obj(),
+				newPodGroup:  st.MakePodGroup().Name("pg").MinCount(4).TemplateRef("t", "w").Obj(),
+				expectedHint: fwk.QueueSkip,
+			},
+			{
+				name:         "update a pod group with same MinCount which matches the pod's pod group name",
+				pod:          st.MakePod().Name("p").PodGroupName("pg").Obj(),
+				oldPodGroup:  st.MakePodGroup().Name("pg").MinCount(3).TemplateRef("t", "w").Obj(),
+				newPodGroup:  st.MakePodGroup().Name("pg").MinCount(3).TemplateRef("t", "w").Obj(),
+				expectedHint: fwk.QueueSkip,
+			},
+			{
+				name:         "update a pod group with smaller MinCount which doesn't match the pod's scheduling group name",
+				pod:          st.MakePod().Name("p").PodGroupName("pg1").Obj(),
+				oldPodGroup:  st.MakePodGroup().Name("pg2").MinCount(3).TemplateRef("t", "w").Obj(),
+				newPodGroup:  st.MakePodGroup().Name("pg2").MinCount(2).TemplateRef("t", "w").Obj(),
+				expectedHint: fwk.QueueSkip,
+			},
+			{
+				name:         "update a pod group with smaller MinCount which doesn't match the pod's scheduling group namespace",
+				pod:          st.MakePod().Namespace("ns1").Name("p").PodGroupName("pg").Obj(),
+				oldPodGroup:  st.MakePodGroup().Namespace("ns2").Name("pg").MinCount(3).TemplateRef("t", "w").Obj(),
+				newPodGroup:  st.MakePodGroup().Namespace("ns2").Name("pg").MinCount(2).TemplateRef("t", "w").Obj(),
+				expectedHint: fwk.QueueSkip,
+			},
+		}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			logger, ctx := ktesting.NewTestContext(t)
+
+			informerFactory := informers.NewSharedInformerFactory(fake.NewClientset(), 0)
+			fh, err := frameworkruntime.NewFramework(ctx, nil, nil,
+				frameworkruntime.WithInformerFactory(informerFactory),
+			)
+			if err != nil {
+				t.Fatalf("Failed to create framework: %v", err)
+			}
+
+			p, err := New(ctx, nil, fh, feature.Features{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			actualHint, err := p.(*GangScheduling).isSchedulableAfterPodGroupUpdated(logger, tc.pod, tc.oldPodGroup, tc.newPodGroup)
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+			if diff := cmp.Diff(tc.expectedHint, actualHint); diff != "" {
+				t.Errorf("Expected QueuingHint doesn't match (-want,+got):\n%s", diff)
+			}
+		})
+	}
+}
+
 type podActivatorMock struct {
 	activatedPods []*v1.Pod
 }
@@ -258,7 +329,7 @@ func TestGangSchedulingFlow(t *testing.T) {
 			cache := internalcache.New(ctx, nil, true)
 
 			informerFactory := informers.NewSharedInformerFactory(fake.NewClientset(), 0)
-			podGroupInformer := informerFactory.Scheduling().V1alpha2().PodGroups()
+			podGroupInformer := informerFactory.Scheduling().V1beta1().PodGroups()
 			fakeActivator := &podActivatorMock{}
 			snapshot := internalcache.NewEmptySnapshot()
 			fh, err := frameworkruntime.NewFramework(ctx, nil, nil,

@@ -24,7 +24,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	schedulingapi "k8s.io/api/scheduling/v1alpha2"
+	schedulingapi "k8s.io/api/scheduling/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -649,7 +649,7 @@ func TestPodGroupScheduling(t *testing.T) {
 				for _, w := range []*schedulingapi.Workload{workload, otherWorkload} {
 					wCopy := w.DeepCopy()
 					wCopy.Namespace = ns
-					if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, wCopy, metav1.CreateOptions{}); err != nil {
+					if _, err := cs.SchedulingV1beta1().Workloads(ns).Create(testCtx.Ctx, wCopy, metav1.CreateOptions{}); err != nil {
 						t.Fatalf("Failed to create workload %s: %v", wCopy.Name, err)
 					}
 				}
@@ -668,13 +668,13 @@ func TestPodGroupScheduling(t *testing.T) {
 					case step.createPodGroup != nil:
 						w := step.createPodGroup.DeepCopy()
 						w.Namespace = ns
-						if _, err := cs.SchedulingV1alpha2().PodGroups(ns).Create(testCtx.Ctx, w, metav1.CreateOptions{}); err != nil {
+						if _, err := cs.SchedulingV1beta1().PodGroups(ns).Create(testCtx.Ctx, w, metav1.CreateOptions{}); err != nil {
 							t.Fatalf("Step %d: Failed to create pod group %s: %v", i, w.Name, err)
 						}
 						// Ensure all next steps will see this pod group.
 						err := wait.PollUntilContextTimeout(testCtx.Ctx, 100*time.Millisecond, wait.ForeverTestTimeout, false,
 							func(_ context.Context) (bool, error) {
-								_, err := testCtx.InformerFactory.Scheduling().V1alpha2().PodGroups().Lister().PodGroups(ns).Get(w.Name)
+								_, err := testCtx.InformerFactory.Scheduling().V1beta1().PodGroups().Lister().PodGroups(ns).Get(w.Name)
 								if err != nil {
 									if apierrors.IsNotFound(err) {
 										return false, nil
@@ -771,7 +771,7 @@ func TestPodGroupScheduling(t *testing.T) {
 
 func podGroupHasScheduledCondition(cs kubernetes.Interface, ns, name string, status metav1.ConditionStatus, reason string) wait.ConditionWithContextFunc {
 	return func(ctx context.Context) (bool, error) {
-		pg, err := cs.SchedulingV1alpha2().PodGroups(ns).Get(ctx, name, metav1.GetOptions{})
+		pg, err := cs.SchedulingV1beta1().PodGroups(ns).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, nil
@@ -843,13 +843,13 @@ func TestWorkloadAwarePreemptionInvocation(t *testing.T) {
 	}
 
 	// 2. Create workload
-	if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
+	if _, err := cs.SchedulingV1beta1().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Failed to create workload: %v", err)
 	}
 
 	// 3. Create PodGroup
 	pg.Namespace = ns
-	if _, err := cs.SchedulingV1alpha2().PodGroups(ns).Create(testCtx.Ctx, pg, metav1.CreateOptions{}); err != nil {
+	if _, err := cs.SchedulingV1beta1().PodGroups(ns).Create(testCtx.Ctx, pg, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Failed to create PodGroup: %v", err)
 	}
 
@@ -978,13 +978,13 @@ func TestPostFilterInvocationCount(t *testing.T) {
 	}
 
 	// 2. Create workload
-	if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
+	if _, err := cs.SchedulingV1beta1().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Failed to create workload: %v", err)
 	}
 
 	// 3. Create PodGroup
 	pg.Namespace = ns
-	if _, err := cs.SchedulingV1alpha2().PodGroups(ns).Create(testCtx.Ctx, pg, metav1.CreateOptions{}); err != nil {
+	if _, err := cs.SchedulingV1beta1().PodGroups(ns).Create(testCtx.Ctx, pg, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Failed to create PodGroup: %v", err)
 	}
 

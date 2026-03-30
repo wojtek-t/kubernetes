@@ -23,7 +23,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-	schedulingapi "k8s.io/api/scheduling/v1alpha2"
+	schedulingapi "k8s.io/api/scheduling/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1339,7 +1339,7 @@ func runTestScenario(t *testing.T, tt scenario, gangSchedulingEnabled bool) {
 	workload := st.MakeWorkload().Name("workload").Namespace(ns).
 		PodGroupTemplate(st.MakePodGroupTemplate().Name("t1").MinCount(1).Obj()).
 		Obj()
-	if _, err := cs.SchedulingV1alpha2().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
+	if _, err := cs.SchedulingV1beta1().Workloads(ns).Create(testCtx.Ctx, workload, metav1.CreateOptions{}); err != nil {
 		t.Fatalf("Failed to create Workload: %v", err)
 	}
 
@@ -1364,13 +1364,13 @@ func runTestScenario(t *testing.T, tt scenario, gangSchedulingEnabled bool) {
 		case step.createPodGroup != nil:
 			w := step.createPodGroup.DeepCopy()
 			w.Namespace = ns
-			if _, err := cs.SchedulingV1alpha2().PodGroups(ns).Create(testCtx.Ctx, w, metav1.CreateOptions{}); err != nil {
+			if _, err := cs.SchedulingV1beta1().PodGroups(ns).Create(testCtx.Ctx, w, metav1.CreateOptions{}); err != nil {
 				t.Fatalf("Step %d: Failed to create pod group %s: %v", i, w.Name, err)
 			}
 			// Ensure all next steps will see this pod group.
 			err := wait.PollUntilContextTimeout(testCtx.Ctx, 100*time.Millisecond, wait.ForeverTestTimeout, false,
 				func(_ context.Context) (bool, error) {
-					_, err := testCtx.InformerFactory.Scheduling().V1alpha2().PodGroups().Lister().PodGroups(ns).Get(w.Name)
+					_, err := testCtx.InformerFactory.Scheduling().V1beta1().PodGroups().Lister().PodGroups(ns).Get(w.Name)
 					if err != nil {
 						if apierrors.IsNotFound(err) {
 							return false, nil
