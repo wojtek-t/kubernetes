@@ -34,31 +34,3 @@ func Convert_scheduling_PodGroupSpec_To_v1beta1_PodGroupSpec(in *scheduling.PodG
 	// Drop ParentRef since it doesn't exist in v1beta1
 	return autoConvert_scheduling_PodGroupSpec_To_v1beta1_PodGroupSpec(in, out, s)
 }
-
-func Convert_v1beta1_PodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(in *schedulingv1beta1.PodGroupSchedulingPolicy, out *scheduling.MultiPodGroupSchedulingPolicy, s conversion.Scope) error {
-	if in.Basic != nil {
-		out.Basic = &scheduling.BasicSchedulingPolicy{}
-	} else {
-		out.Basic = nil
-	}
-	if in.Gang != nil {
-		out.Gang = &scheduling.GangSchedulingPolicy{}
-	} else {
-		out.Gang = nil
-	}
-	return nil
-}
-
-func Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1beta1_PodGroupSchedulingPolicy(in *scheduling.MultiPodGroupSchedulingPolicy, out *schedulingv1beta1.PodGroupSchedulingPolicy, s conversion.Scope) error {
-	if in.Basic != nil {
-		out.Basic = &schedulingv1beta1.BasicSchedulingPolicy{}
-	} else {
-		out.Basic = nil
-	}
-	if in.Gang != nil {
-		out.Gang = &schedulingv1beta1.GangSchedulingPolicy{}
-	} else {
-		out.Gang = nil
-	}
-	return nil
-}

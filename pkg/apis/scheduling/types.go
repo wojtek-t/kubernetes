@@ -394,7 +394,7 @@ type PodGroupSpec struct {
 	// This field is immutable.
 	//
 	// +required
-	SchedulingPolicy MultiPodGroupSchedulingPolicy
+	SchedulingPolicy PodGroupSchedulingPolicy
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
@@ -647,11 +647,26 @@ type MultiPodGroupSchedulingPolicy struct {
 	// standard Kubernetes scheduling behavior.
 	//
 	// +optional
-	Basic *BasicSchedulingPolicy
+	Basic *BasicGroupSchedulingPolicy
 
 	// Gang specifies that the pods in this group should be scheduled using
 	// all-or-nothing semantics.
 	//
 	// +optional
-	Gang *GangSchedulingPolicy
+	Gang *GangGroupSchedulingPolicy
+}
+
+// BasicGroupSchedulingPolicy indicates that standard Kubernetes
+// scheduling behavior should be used for the MultiPodGroup.
+type BasicGroupSchedulingPolicy struct {
+}
+
+// GangGroupSchedulingPolicy specifies that the pods in this group should be scheduled using
+// all-or-nothing semantics for the MultiPodGroup.
+type GangGroupSchedulingPolicy struct {
+	// MinGroupSize is the minimum number of pods of the group that must
+	// be available to schedule the group.
+	//
+	// +optional
+	MinGroupSize *int32
 }

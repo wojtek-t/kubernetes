@@ -42,10 +42,20 @@ func Convert_scheduling_ParentReference_To_v1alpha2_ParentReference(in *scheduli
 	return nil
 }
 
-func Convert_v1alpha2_MultiPodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(in *schedulingv1alpha2.MultiPodGroupSchedulingPolicy, out *scheduling.MultiPodGroupSchedulingPolicy, s conversion.Scope) error {
-	return autoConvert_v1alpha2_MultiPodGroupSchedulingPolicy_To_scheduling_MultiPodGroupSchedulingPolicy(in, out, s)
+
+
+func Convert_v1alpha2_BasicGroupSchedulingPolicy_To_scheduling_BasicGroupSchedulingPolicy(in *schedulingv1alpha2.BasicGroupSchedulingPolicy, out *scheduling.BasicGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_v1alpha2_BasicGroupSchedulingPolicy_To_scheduling_BasicGroupSchedulingPolicy(in, out, s)
 }
 
-func Convert_scheduling_MultiPodGroupSchedulingPolicy_To_v1alpha2_MultiPodGroupSchedulingPolicy(in *scheduling.MultiPodGroupSchedulingPolicy, out *schedulingv1alpha2.MultiPodGroupSchedulingPolicy, s conversion.Scope) error {
-	return autoConvert_scheduling_MultiPodGroupSchedulingPolicy_To_v1alpha2_MultiPodGroupSchedulingPolicy(in, out, s)
+func Convert_scheduling_BasicGroupSchedulingPolicy_To_v1alpha2_BasicGroupSchedulingPolicy(in *scheduling.BasicGroupSchedulingPolicy, out *schedulingv1alpha2.BasicGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_scheduling_BasicGroupSchedulingPolicy_To_v1alpha2_BasicGroupSchedulingPolicy(in, out, s)
+}
+
+func Convert_v1alpha2_GangGroupSchedulingPolicy_To_scheduling_GangGroupSchedulingPolicy(in *schedulingv1alpha2.GangGroupSchedulingPolicy, out *scheduling.GangGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_v1alpha2_GangGroupSchedulingPolicy_To_scheduling_GangGroupSchedulingPolicy(in, out, s)
+}
+
+func Convert_scheduling_GangGroupSchedulingPolicy_To_v1alpha2_GangGroupSchedulingPolicy(in *scheduling.GangGroupSchedulingPolicy, out *schedulingv1alpha2.GangGroupSchedulingPolicy, s conversion.Scope) error {
+	return autoConvert_scheduling_GangGroupSchedulingPolicy_To_v1alpha2_GangGroupSchedulingPolicy(in, out, s)
 }

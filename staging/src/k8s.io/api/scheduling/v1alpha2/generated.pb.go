@@ -31,7 +31,11 @@ import (
 	strings "strings"
 )
 
+func (m *BasicGroupSchedulingPolicy) Reset() { *m = BasicGroupSchedulingPolicy{} }
+
 func (m *BasicSchedulingPolicy) Reset() { *m = BasicSchedulingPolicy{} }
+
+func (m *GangGroupSchedulingPolicy) Reset() { *m = GangGroupSchedulingPolicy{} }
 
 func (m *GangSchedulingPolicy) Reset() { *m = GangSchedulingPolicy{} }
 
@@ -79,6 +83,29 @@ func (m *WorkloadPodGroupTemplateReference) Reset() { *m = WorkloadPodGroupTempl
 
 func (m *WorkloadSpec) Reset() { *m = WorkloadSpec{} }
 
+func (m *BasicGroupSchedulingPolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *BasicGroupSchedulingPolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *BasicGroupSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func (m *BasicSchedulingPolicy) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -99,6 +126,34 @@ func (m *BasicSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *GangGroupSchedulingPolicy) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GangGroupSchedulingPolicy) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GangGroupSchedulingPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.MinGroupSize != nil {
+		i = encodeVarintGenerated(dAtA, i, uint64(*m.MinGroupSize))
+		i--
+		dAtA[i] = 0x8
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1162,12 +1217,33 @@ func encodeVarintGenerated(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *BasicGroupSchedulingPolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
 func (m *BasicSchedulingPolicy) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
+	return n
+}
+
+func (m *GangGroupSchedulingPolicy) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MinGroupSize != nil {
+		n += 1 + sovGenerated(uint64(*m.MinGroupSize))
+	}
 	return n
 }
 
@@ -1567,11 +1643,30 @@ func sovGenerated(x uint64) (n int) {
 func sozGenerated(x uint64) (n int) {
 	return sovGenerated(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
+func (this *BasicGroupSchedulingPolicy) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&BasicGroupSchedulingPolicy{`,
+		`}`,
+	}, "")
+	return s
+}
 func (this *BasicSchedulingPolicy) String() string {
 	if this == nil {
 		return "nil"
 	}
 	s := strings.Join([]string{`&BasicSchedulingPolicy{`,
+		`}`,
+	}, "")
+	return s
+}
+func (this *GangGroupSchedulingPolicy) String() string {
+	if this == nil {
+		return "nil"
+	}
+	s := strings.Join([]string{`&GangGroupSchedulingPolicy{`,
+		`MinGroupSize:` + valueToStringGenerated(this.MinGroupSize) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1619,8 +1714,8 @@ func (this *MultiPodGroupSchedulingPolicy) String() string {
 		return "nil"
 	}
 	s := strings.Join([]string{`&MultiPodGroupSchedulingPolicy{`,
-		`Basic:` + strings.Replace(this.Basic.String(), "BasicSchedulingPolicy", "BasicSchedulingPolicy", 1) + `,`,
-		`Gang:` + strings.Replace(this.Gang.String(), "GangSchedulingPolicy", "GangSchedulingPolicy", 1) + `,`,
+		`Basic:` + strings.Replace(this.Basic.String(), "BasicGroupSchedulingPolicy", "BasicGroupSchedulingPolicy", 1) + `,`,
+		`Gang:` + strings.Replace(this.Gang.String(), "GangGroupSchedulingPolicy", "GangGroupSchedulingPolicy", 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1631,7 +1726,7 @@ func (this *MultiPodGroupSpec) String() string {
 	}
 	s := strings.Join([]string{`&MultiPodGroupSpec{`,
 		`ParentRef:` + strings.Replace(this.ParentRef.String(), "ParentReference", "ParentReference", 1) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`}`,
 	}, "")
 	return s
@@ -1749,7 +1844,7 @@ func (this *PodGroupSpec) String() string {
 	repeatedStringForResourceClaims += "}"
 	s := strings.Join([]string{`&PodGroupSpec{`,
 		`PodGroupTemplateRef:` + strings.Replace(this.PodGroupTemplateRef.String(), "PodGroupTemplateReference", "PodGroupTemplateReference", 1) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`SchedulingConstraints:` + strings.Replace(this.SchedulingConstraints.String(), "PodGroupSchedulingConstraints", "PodGroupSchedulingConstraints", 1) + `,`,
 		`ResourceClaims:` + repeatedStringForResourceClaims + `,`,
 		`DisruptionMode:` + valueToStringGenerated(this.DisruptionMode) + `,`,
@@ -1792,7 +1887,7 @@ func (this *PodGroupTemplate) String() string {
 	repeatedStringForResourceClaims += "}"
 	s := strings.Join([]string{`&PodGroupTemplate{`,
 		`Name:` + fmt.Sprintf("%v", this.Name) + `,`,
-		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "MultiPodGroupSchedulingPolicy", "MultiPodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
+		`SchedulingPolicy:` + strings.Replace(strings.Replace(this.SchedulingPolicy.String(), "PodGroupSchedulingPolicy", "PodGroupSchedulingPolicy", 1), `&`, ``, 1) + `,`,
 		`SchedulingConstraints:` + strings.Replace(this.SchedulingConstraints.String(), "PodGroupSchedulingConstraints", "PodGroupSchedulingConstraints", 1) + `,`,
 		`ResourceClaims:` + repeatedStringForResourceClaims + `,`,
 		`DisruptionMode:` + valueToStringGenerated(this.DisruptionMode) + `,`,
@@ -1896,6 +1991,56 @@ func valueToStringGenerated(v interface{}) string {
 	pv := reflect.Indirect(rv).Interface()
 	return fmt.Sprintf("*%v", pv)
 }
+func (m *BasicGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: BasicGroupSchedulingPolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: BasicGroupSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *BasicSchedulingPolicy) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -1925,6 +2070,76 @@ func (m *BasicSchedulingPolicy) Unmarshal(dAtA []byte) error {
 			return fmt.Errorf("proto: BasicSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipGenerated(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthGenerated
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GangGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowGenerated
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GangGroupSchedulingPolicy: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GangGroupSchedulingPolicy: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinGroupSize", wireType)
+			}
+			var v int32
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowGenerated
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.MinGroupSize = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := skipGenerated(dAtA[iNdEx:])
@@ -2340,7 +2555,7 @@ func (m *MultiPodGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Basic == nil {
-				m.Basic = &BasicSchedulingPolicy{}
+				m.Basic = &BasicGroupSchedulingPolicy{}
 			}
 			if err := m.Basic.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -2376,7 +2591,7 @@ func (m *MultiPodGroupSchedulingPolicy) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Gang == nil {
-				m.Gang = &GangSchedulingPolicy{}
+				m.Gang = &GangGroupSchedulingPolicy{}
 			}
 			if err := m.Gang.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err

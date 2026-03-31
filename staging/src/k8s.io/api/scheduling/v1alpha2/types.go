@@ -128,7 +128,7 @@ type PodGroupTemplate struct {
 	// SchedulingPolicy defines the scheduling policy for this PodGroupTemplate.
 	//
 	// +required
-	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroupTemplate.
 	// This field is only available when the TopologyAwareWorkloadScheduling feature gate is enabled.
@@ -371,7 +371,7 @@ type PodGroupSpec struct {
 	//
 	// +required
 	// +k8s:immutable
-	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 
 	// SchedulingConstraints defines optional scheduling constraints (e.g. topology) for this PodGroup.
 	// Controllers are expected to fill this field by copying it from a PodGroupTemplate.
@@ -623,7 +623,7 @@ type MultiPodGroupSchedulingPolicy struct {
 	// +optional
 	// +k8s:optional
 	// +k8s:unionMember
-	Basic *BasicSchedulingPolicy `json:"basic,omitempty" protobuf:"bytes,1,opt,name=basic"`
+	Basic *BasicGroupSchedulingPolicy `json:"basic,omitempty" protobuf:"bytes,1,opt,name=basic"`
 
 	// Gang specifies that the pods in this group should be scheduled using
 	// all-or-nothing semantics.
@@ -631,7 +631,23 @@ type MultiPodGroupSchedulingPolicy struct {
 	// +optional
 	// +k8s:optional
 	// +k8s:unionMember
-	Gang *GangSchedulingPolicy `json:"gang,omitempty" protobuf:"bytes,2,opt,name=gang"`
+	Gang *GangGroupSchedulingPolicy `json:"gang,omitempty" protobuf:"bytes,2,opt,name=gang"`
+}
+
+// BasicGroupSchedulingPolicy indicates that standard Kubernetes
+// scheduling behavior should be used.
+type BasicGroupSchedulingPolicy struct {
+}
+
+// GangGroupSchedulingPolicy indicates that the pods in this group
+// should be scheduled using all-or-nothing semantics.
+type GangGroupSchedulingPolicy struct {
+	// MinGroupSize is the minimum number of pods of the group that must
+	// be available to schedule the group.
+	//
+	// +optional
+	// +k8s:optional
+	MinGroupSize *int32 `json:"minGroupSize,omitempty" protobuf:"varint,1,opt,name=minGroupSize"`
 }
 
 // +genclient
@@ -685,7 +701,7 @@ type MultiPodGroupSpec struct {
 	//
 	// +required
 	// +k8s:immutable
-	SchedulingPolicy MultiPodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
 }
 
 // MultiPodGroupStatus represents information about the status of a MultiPodGroup.

@@ -87,7 +87,7 @@ var AllOrderedPlugins = []string{
 	podsecurity.PluginName,                  // PodSecurity
 	podnodeselector.PluginName,              // PodNodeSelector
 	podpriority.PluginName,                  // Priority
-			multipodgroup.PluginName,
+	multipodgroup.PluginName,                // MultiPodGroup
 	defaulttolerationseconds.PluginName,     // DefaultTolerationSeconds
 	podtolerationrestriction.PluginName,     // PodTolerationRestriction
 	eventratelimit.PluginName,               // EventRateLimit

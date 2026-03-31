@@ -1141,7 +1141,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		resourcev1beta2.ResourceSliceSpec{}.OpenAPIModelName():                                                          schema_k8sio_api_resource_v1beta2_ResourceSliceSpec(ref),
 		schedulingv1.PriorityClass{}.OpenAPIModelName():                                                                 schema_k8sio_api_scheduling_v1_PriorityClass(ref),
 		schedulingv1.PriorityClassList{}.OpenAPIModelName():                                                             schema_k8sio_api_scheduling_v1_PriorityClassList(ref),
+		schedulingv1alpha2.BasicGroupSchedulingPolicy{}.OpenAPIModelName():                                              schema_k8sio_api_scheduling_v1alpha2_BasicGroupSchedulingPolicy(ref),
 		schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName():                                                   schema_k8sio_api_scheduling_v1alpha2_BasicSchedulingPolicy(ref),
+		schedulingv1alpha2.GangGroupSchedulingPolicy{}.OpenAPIModelName():                                               schema_k8sio_api_scheduling_v1alpha2_GangGroupSchedulingPolicy(ref),
 		schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName():                                                    schema_k8sio_api_scheduling_v1alpha2_GangSchedulingPolicy(ref),
 		schedulingv1alpha2.MultiPodGroup{}.OpenAPIModelName():                                                           schema_k8sio_api_scheduling_v1alpha2_MultiPodGroup(ref),
 		schedulingv1alpha2.MultiPodGroupList{}.OpenAPIModelName():                                                       schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupList(ref),
@@ -54685,12 +54687,43 @@ func schema_k8sio_api_scheduling_v1_PriorityClassList(ref common.ReferenceCallba
 	}
 }
 
+func schema_k8sio_api_scheduling_v1alpha2_BasicGroupSchedulingPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BasicGroupSchedulingPolicy indicates that standard Kubernetes scheduling behavior should be used.",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
 func schema_k8sio_api_scheduling_v1alpha2_BasicSchedulingPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BasicSchedulingPolicy indicates that standard Kubernetes scheduling behavior should be used.",
 				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_k8sio_api_scheduling_v1alpha2_GangGroupSchedulingPolicy(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "GangGroupSchedulingPolicy indicates that the pods in this group should be scheduled using all-or-nothing semantics.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"minGroupSize": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MinGroupSize is the minimum number of pods of the group that must be available to schedule the group.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -54830,13 +54863,13 @@ func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSchedulingPolicy(ref comm
 					"basic": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Basic specifies that the pods in this group should be scheduled using standard Kubernetes scheduling behavior.",
-							Ref:         ref(schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName()),
+							Ref:         ref(schedulingv1alpha2.BasicGroupSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
 					"gang": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Gang specifies that the pods in this group should be scheduled using all-or-nothing semantics.",
-							Ref:         ref(schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName()),
+							Ref:         ref(schedulingv1alpha2.GangGroupSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
 				},
@@ -54855,7 +54888,7 @@ func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSchedulingPolicy(ref comm
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.BasicSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.GangSchedulingPolicy{}.OpenAPIModelName()},
+			schedulingv1alpha2.BasicGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.GangGroupSchedulingPolicy{}.OpenAPIModelName()},
 	}
 }
 
@@ -54876,7 +54909,7 @@ func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSpec(ref common.Reference
 						SchemaProps: spec.SchemaProps{
 							Description: "SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup. This field is immutable.",
 							Default:     map[string]interface{}{},
-							Ref:         ref(schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName()),
+							Ref:         ref(schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
 				},
@@ -54884,7 +54917,7 @@ func schema_k8sio_api_scheduling_v1alpha2_MultiPodGroupSpec(ref common.Reference
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.ParentReference{}.OpenAPIModelName()},
+			schedulingv1alpha2.ParentReference{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()},
 	}
 }
 
@@ -55206,7 +55239,7 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSpec(ref common.ReferenceCallb
 						SchemaProps: spec.SchemaProps{
 							Description: "SchedulingPolicy defines the scheduling policy for this instance of the PodGroup. Controllers are expected to fill this field by copying it from a PodGroupTemplate. This field is immutable.",
 							Default:     map[string]interface{}{},
-							Ref:         ref(schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName()),
+							Ref:         ref(schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
 					"schedulingConstraints": {
@@ -55273,7 +55306,7 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupSpec(ref common.ReferenceCallb
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.ParentReference{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupTemplateReference{}.OpenAPIModelName()},
+			schedulingv1alpha2.ParentReference{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupTemplateReference{}.OpenAPIModelName()},
 	}
 }
 
@@ -55359,7 +55392,7 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupTemplate(ref common.ReferenceC
 						SchemaProps: spec.SchemaProps{
 							Description: "SchedulingPolicy defines the scheduling policy for this PodGroupTemplate.",
 							Default:     map[string]interface{}{},
-							Ref:         ref(schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName()),
+							Ref:         ref(schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()),
 						},
 					},
 					"schedulingConstraints": {
@@ -55419,7 +55452,7 @@ func schema_k8sio_api_scheduling_v1alpha2_PodGroupTemplate(ref common.ReferenceC
 			},
 		},
 		Dependencies: []string{
-			schedulingv1alpha2.MultiPodGroupSchedulingPolicy{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName()},
+			schedulingv1alpha2.PodGroupResourceClaim{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingConstraints{}.OpenAPIModelName(), schedulingv1alpha2.PodGroupSchedulingPolicy{}.OpenAPIModelName()},
 	}
 }
 

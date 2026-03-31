@@ -27,7 +27,7 @@ type MultiPodGroupSpecApplyConfiguration struct {
 	ParentRef *ParentReferenceApplyConfiguration `json:"parentRef,omitempty"`
 	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
 	// This field is immutable.
-	SchedulingPolicy *MultiPodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
+	SchedulingPolicy *PodGroupSchedulingPolicyApplyConfiguration `json:"schedulingPolicy,omitempty"`
 }
 
 // MultiPodGroupSpecApplyConfiguration constructs a declarative configuration of the MultiPodGroupSpec type for use with
@@ -47,7 +47,7 @@ func (b *MultiPodGroupSpecApplyConfiguration) WithParentRef(value *ParentReferen
 // WithSchedulingPolicy sets the SchedulingPolicy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SchedulingPolicy field is set to the value of the last call.
-func (b *MultiPodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *MultiPodGroupSchedulingPolicyApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
+func (b *MultiPodGroupSpecApplyConfiguration) WithSchedulingPolicy(value *PodGroupSchedulingPolicyApplyConfiguration) *MultiPodGroupSpecApplyConfiguration {
 	b.SchedulingPolicy = value
 	return b
 }

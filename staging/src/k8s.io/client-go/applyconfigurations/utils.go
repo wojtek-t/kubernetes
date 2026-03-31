@@ -1846,8 +1846,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationsschedulingv1alpha2.GangSchedulingPolicyApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroup"):
 		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupApplyConfiguration{}
-	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroupSchedulingPolicy"):
-		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupSchedulingPolicyApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroupSpec"):
 		return &applyconfigurationsschedulingv1alpha2.MultiPodGroupSpecApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("MultiPodGroupStatus"):
@@ -1862,6 +1860,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &applyconfigurationsschedulingv1alpha2.PodGroupResourceClaimStatusApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroupSchedulingConstraints"):
 		return &applyconfigurationsschedulingv1alpha2.PodGroupSchedulingConstraintsApplyConfiguration{}
+	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroupSchedulingPolicy"):
+		return &applyconfigurationsschedulingv1alpha2.PodGroupSchedulingPolicyApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroupSpec"):
 		return &applyconfigurationsschedulingv1alpha2.PodGroupSpecApplyConfiguration{}
 	case schedulingv1alpha2.SchemeGroupVersion.WithKind("PodGroupStatus"):

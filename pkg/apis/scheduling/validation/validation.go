@@ -80,7 +80,7 @@ func ValidatePodGroupUpdate(podGroup, oldPodGroup *scheduling.PodGroup) field.Er
 	return allErrs
 }
 
-func validateSchedulingPolicyTypeUpdate(newPolicy, oldPolicy *scheduling.MultiPodGroupSchedulingPolicy, fldPath *field.Path) field.ErrorList {
+func validateSchedulingPolicyTypeUpdate(newPolicy, oldPolicy *scheduling.PodGroupSchedulingPolicy, fldPath *field.Path) field.ErrorList {
 	var allErrs field.ErrorList
 	switch {
 	case oldPolicy.Basic != nil:
