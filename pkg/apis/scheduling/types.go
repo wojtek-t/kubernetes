@@ -264,7 +264,6 @@ type PodGroupSchedulingPolicy struct {
 	Gang *GangSchedulingPolicy
 }
 
-
 // BasicSchedulingPolicy indicates that standard Kubernetes
 // scheduling behavior should be used.
 type BasicSchedulingPolicy struct {
