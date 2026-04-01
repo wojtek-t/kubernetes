@@ -244,7 +244,6 @@ type PodGroupTemplate struct {
 	// +featureGate=WorkloadAwarePreemption
 	// +optional
 	Priority *int32
-
 }
 
 // PodGroupSchedulingPolicy defines the scheduling configuration for a PodGroup.
