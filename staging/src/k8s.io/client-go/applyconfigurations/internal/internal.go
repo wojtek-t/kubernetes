@@ -14730,6 +14730,55 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: numeric
       default: 0
+- name: io.k8s.api.scheduling.v1alpha2.MultiPodGroup
+  map:
+    fields:
+    - name: apiVersion
+      type:
+        scalar: string
+    - name: kind
+      type:
+        scalar: string
+    - name: metadata
+      type:
+        namedType: io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta
+      default: {}
+    - name: spec
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSpec
+      default: {}
+    - name: status
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.MultiPodGroupStatus
+      default: {}
+- name: io.k8s.api.scheduling.v1alpha2.MultiPodGroupSpec
+  map:
+    fields:
+    - name: parentRef
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.ParentReference
+    - name: schedulingPolicy
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.PodGroupSchedulingPolicy
+      default: {}
+- name: io.k8s.api.scheduling.v1alpha2.MultiPodGroupStatus
+  map:
+    fields:
+    - name: conditions
+      type:
+        list:
+          elementType:
+            namedType: io.k8s.apimachinery.pkg.apis.meta.v1.Condition
+          elementRelationship: associative
+          keys:
+          - type
+- name: io.k8s.api.scheduling.v1alpha2.ParentReference
+  map:
+    fields:
+    - name: name
+      type:
+        scalar: string
+      default: ""
 - name: io.k8s.api.scheduling.v1alpha2.PodGroup
   map:
     fields:
@@ -14805,6 +14854,9 @@ var schemaYAML = typed.YAMLObject(`types:
       type:
         scalar: string
       default: Pod
+    - name: parentRef
+      type:
+        namedType: io.k8s.api.scheduling.v1alpha2.ParentReference
     - name: podGroupTemplateRef
       type:
         namedType: io.k8s.api.scheduling.v1alpha2.PodGroupTemplateReference

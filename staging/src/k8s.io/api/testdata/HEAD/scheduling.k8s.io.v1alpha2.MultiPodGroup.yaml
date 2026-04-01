@@ -1,5 +1,5 @@
 apiVersion: scheduling.k8s.io/v1alpha2
-kind: PodGroup
+kind: MultiPodGroup
 metadata:
   annotations:
     annotationsKey: annotationsValue
@@ -33,22 +33,8 @@ metadata:
   selfLink: selfLinkValue
   uid: uidValue
 spec:
-  disruptionMode: disruptionModeValue
   parentRef:
     name: nameValue
-  podGroupTemplateRef:
-    workload:
-      podGroupTemplateName: podGroupTemplateNameValue
-      workloadName: workloadNameValue
-  priority: 7
-  priorityClassName: priorityClassNameValue
-  resourceClaims:
-  - name: nameValue
-    resourceClaimName: resourceClaimNameValue
-    resourceClaimTemplateName: resourceClaimTemplateNameValue
-  schedulingConstraints:
-    topology:
-    - key: keyValue
   schedulingPolicy:
     basic: {}
     gang:
@@ -61,6 +47,3 @@ status:
     reason: reasonValue
     status: statusValue
     type: typeValue
-  resourceClaimStatuses:
-  - name: nameValue
-    resourceClaimName: resourceClaimNameValue

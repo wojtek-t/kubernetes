@@ -28,9 +28,25 @@ import "k8s.io/apimachinery/pkg/runtime/schema/generated.proto";
 // Package-wide variables from generator "generated".
 option go_package = "k8s.io/api/scheduling/v1alpha2";
 
+// BasicGroupSchedulingPolicy indicates that standard Kubernetes
+// scheduling behavior should be used.
+message BasicGroupSchedulingPolicy {
+}
+
 // BasicSchedulingPolicy indicates that standard Kubernetes
 // scheduling behavior should be used.
 message BasicSchedulingPolicy {
+}
+
+// GangGroupSchedulingPolicy indicates that the pods in this group
+// should be scheduled using all-or-nothing semantics.
+message GangGroupSchedulingPolicy {
+  // MinGroupSize is the minimum number of pods of the group that must
+  // be available to schedule the group.
+  //
+  // +optional
+  // +k8s:optional
+  optional int32 minGroupSize = 1;
 }
 
 // GangSchedulingPolicy defines the parameters for gang scheduling.
@@ -43,6 +59,95 @@ message GangSchedulingPolicy {
   // +k8s:required
   // +k8s:minimum=1
   optional int32 minCount = 1;
+}
+
+// MultiPodGroup allows for expressing scheduling constraints that should be used
+// when managing the lifecycle of workloads from the scheduling perspective,
+// including scheduling, preemption, eviction and other phases.
+message MultiPodGroup {
+  // Standard object's metadata.
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+  //
+  // +optional
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.ObjectMeta metadata = 1;
+
+  // Spec defines the desired state of the MultiPodGroup.
+  //
+  // +required
+  optional MultiPodGroupSpec spec = 2;
+
+  // Status represents the current observed state of the MultiPodGroup.
+  //
+  // +optional
+  optional MultiPodGroupStatus status = 3;
+}
+
+// MultiPodGroupList contains a list of MultiPodGroup resources.
+message MultiPodGroupList {
+  // Standard list metadata.
+  //
+  // +optional
+  optional .k8s.io.apimachinery.pkg.apis.meta.v1.ListMeta metadata = 1;
+
+  // Items is the list of MultiPodGroups.
+  repeated MultiPodGroup items = 2;
+}
+
+// MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup.
+// Exactly one policy must be set.
+// +union
+message MultiPodGroupSchedulingPolicy {
+  // Basic specifies that the pods in this group should be scheduled using
+  // standard Kubernetes scheduling behavior.
+  //
+  // +optional
+  // +k8s:optional
+  // +k8s:unionMember
+  optional BasicGroupSchedulingPolicy basic = 1;
+
+  // Gang specifies that the pods in this group should be scheduled using
+  // all-or-nothing semantics.
+  //
+  // +optional
+  // +k8s:optional
+  // +k8s:unionMember
+  optional GangGroupSchedulingPolicy gang = 2;
+}
+
+// MultiPodGroupSpec defines the desired state of a MultiPodGroup.
+message MultiPodGroupSpec {
+  // ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
+  // +optional
+  // +k8s:optional
+  optional ParentReference parentRef = 1;
+
+  // SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
+  // This field is immutable.
+  //
+  // +required
+  // +k8s:immutable
+  optional PodGroupSchedulingPolicy schedulingPolicy = 2;
+}
+
+// MultiPodGroupStatus represents information about the status of a MultiPodGroup.
+message MultiPodGroupStatus {
+  // Conditions represent the latest observations of the MultiPodGroup's state.
+  //
+  // +optional
+  // +patchMergeKey=type
+  // +patchStrategy=merge
+  // +listType=map
+  // +listMapKey=type
+  repeated .k8s.io.apimachinery.pkg.apis.meta.v1.Condition conditions = 1;
+}
+
+// ParentReference contains a reference to the parent MultiPodGroup.
+message ParentReference {
+  // Name uniquely identifies the parent MultiPodGroup.
+  //
+  // +required
+  // +k8s:required
+  optional string name = 1;
 }
 
 // PodGroup represents a runtime instance of pods grouped together.
@@ -290,6 +395,11 @@ message PodGroupSpec {
   // +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:maximum=1000000000 # HighestUserDefinablePriority
   // +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:minimum=-2147483648
   optional int32 priority = 7;
+
+  // ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
+  // +optional
+  // +k8s:optional
+  optional ParentReference parentRef = 8;
 }
 
 // PodGroupStatus represents information about the status of a pod group.

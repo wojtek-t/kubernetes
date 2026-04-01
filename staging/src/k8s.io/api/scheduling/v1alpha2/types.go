@@ -458,6 +458,10 @@ type PodGroupSpec struct {
 	// +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:maximum=1000000000 # HighestUserDefinablePriority
 	// +k8s:ifEnabled("WorkloadAwarePreemption")=+k8s:minimum=-2147483648
 	Priority *int32 `json:"priority,omitempty" protobuf:"varint,7,opt,name=priority"`
+	// ParentRef references an optional MultiPodGroup that this PodGroup belongs to.
+	// +optional
+	// +k8s:optional
+	ParentRef *ParentReference `json:"parentRef,omitempty" protobuf:"bytes,8,opt,name=parentRef"`
 }
 
 // PodGroupStatus represents information about the status of a pod group.
@@ -598,4 +602,116 @@ type TopologyConstraint struct {
 	// +k8s:required
 	// +k8s:format=k8s-label-key
 	Key string `json:"key" protobuf:"bytes,1,opt,name=key"`
+}
+
+// ParentReference contains a reference to the parent MultiPodGroup.
+type ParentReference struct {
+	// Name uniquely identifies the parent MultiPodGroup.
+	//
+	// +required
+	// +k8s:required
+	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
+}
+
+// MultiPodGroupSchedulingPolicy defines the scheduling configuration for a MultiPodGroup.
+// Exactly one policy must be set.
+// +union
+type MultiPodGroupSchedulingPolicy struct {
+	// Basic specifies that the pods in this group should be scheduled using
+	// standard Kubernetes scheduling behavior.
+	//
+	// +optional
+	// +k8s:optional
+	// +k8s:unionMember
+	Basic *BasicGroupSchedulingPolicy `json:"basic,omitempty" protobuf:"bytes,1,opt,name=basic"`
+
+	// Gang specifies that the pods in this group should be scheduled using
+	// all-or-nothing semantics.
+	//
+	// +optional
+	// +k8s:optional
+	// +k8s:unionMember
+	Gang *GangGroupSchedulingPolicy `json:"gang,omitempty" protobuf:"bytes,2,opt,name=gang"`
+}
+
+// BasicGroupSchedulingPolicy indicates that standard Kubernetes
+// scheduling behavior should be used.
+type BasicGroupSchedulingPolicy struct {
+}
+
+// GangGroupSchedulingPolicy indicates that the pods in this group
+// should be scheduled using all-or-nothing semantics.
+type GangGroupSchedulingPolicy struct {
+	// MinGroupSize is the minimum number of pods of the group that must
+	// be available to schedule the group.
+	//
+	// +optional
+	// +k8s:optional
+	MinGroupSize *int32 `json:"minGroupSize,omitempty" protobuf:"varint,1,opt,name=minGroupSize"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// MultiPodGroup allows for expressing scheduling constraints that should be used
+// when managing the lifecycle of workloads from the scheduling perspective,
+// including scheduling, preemption, eviction and other phases.
+type MultiPodGroup struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
+	//
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// Spec defines the desired state of the MultiPodGroup.
+	//
+	// +required
+	Spec MultiPodGroupSpec `json:"spec" protobuf:"bytes,2,opt,name=spec"`
+
+	// Status represents the current observed state of the MultiPodGroup.
+	//
+	// +optional
+	Status MultiPodGroupStatus `json:"status,omitempty" protobuf:"bytes,3,opt,name=status"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// MultiPodGroupList contains a list of MultiPodGroup resources.
+type MultiPodGroupList struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard list metadata.
+	//
+	// +optional
+	metav1.ListMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// Items is the list of MultiPodGroups.
+	Items []MultiPodGroup `json:"items" protobuf:"bytes,2,rep,name=items"`
+}
+
+// MultiPodGroupSpec defines the desired state of a MultiPodGroup.
+type MultiPodGroupSpec struct {
+	// ParentRef references an optional MultiPodGroup that this MultiPodGroup belongs to.
+	// +optional
+	// +k8s:optional
+	ParentRef *ParentReference `json:"parentRef,omitempty" protobuf:"bytes,1,opt,name=parentRef"`
+
+	// SchedulingPolicy defines the scheduling policy for this instance of the MultiPodGroup.
+	// This field is immutable.
+	//
+	// +required
+	// +k8s:immutable
+	SchedulingPolicy PodGroupSchedulingPolicy `json:"schedulingPolicy" protobuf:"bytes,2,opt,name=schedulingPolicy"`
+}
+
+// MultiPodGroupStatus represents information about the status of a MultiPodGroup.
+type MultiPodGroupStatus struct {
+	// Conditions represent the latest observations of the MultiPodGroup's state.
+	//
+	// +optional
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }

@@ -41,6 +41,7 @@ import (
 	podgroupstore "k8s.io/kubernetes/pkg/registry/scheduling/podgroup/storage"
 	priorityclassstore "k8s.io/kubernetes/pkg/registry/scheduling/priorityclass/storage"
 	workloadstore "k8s.io/kubernetes/pkg/registry/scheduling/workload/storage"
+	multipodgroupstore "k8s.io/kubernetes/pkg/registry/scheduling/multipodgroup/storage"
 )
 
 const PostStartHookName = "scheduling/bootstrap-system-priority-classes"
@@ -107,6 +108,19 @@ func (p RESTStorageProvider) v1alpha2Storage(apiResourceConfigSource serverstora
 			storage[resource+"/status"] = podGroupStatusStorage
 		} else {
 			klog.Warning("PodGroup storage is disabled because the GenericWorkload feature gate is disabled")
+		}
+	}
+
+	if resource := "multipodgroups"; apiResourceConfigSource.ResourceEnabled(schedulingapiv1alpha2.SchemeGroupVersion.WithResource(resource)) {
+		if utilfeature.DefaultFeatureGate.Enabled(features.GenericWorkload) {
+			multiPodGroupStorage, multiPodGroupStatusStorage, err := multipodgroupstore.NewREST(restOptionsGetter)
+			if err != nil {
+				return nil, err
+			}
+			storage[resource] = multiPodGroupStorage
+			storage[resource+"/status"] = multiPodGroupStatusStorage
+		} else {
+			klog.Warning("MultiPodGroup storage is disabled because the GenericWorkload feature gate is disabled")
 		}
 	}
 

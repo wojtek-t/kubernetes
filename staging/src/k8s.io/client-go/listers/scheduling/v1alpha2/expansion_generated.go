@@ -18,6 +18,14 @@ limitations under the License.
 
 package v1alpha2
 
+// MultiPodGroupListerExpansion allows custom methods to be added to
+// MultiPodGroupLister.
+type MultiPodGroupListerExpansion interface{}
+
+// MultiPodGroupNamespaceListerExpansion allows custom methods to be added to
+// MultiPodGroupNamespaceLister.
+type MultiPodGroupNamespaceListerExpansion interface{}
+
 // PodGroupListerExpansion allows custom methods to be added to
 // PodGroupLister.
 type PodGroupListerExpansion interface{}

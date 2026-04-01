@@ -40,6 +40,14 @@ func init() { localSchemeBuilder.Register(RegisterValidations) }
 // RegisterValidations adds validation functions to the given scheme.
 // Public to allow building arbitrary schemes.
 func RegisterValidations(scheme *runtime.Scheme) error {
+	// type MultiPodGroup
+	scheme.AddValidationFunc((*schedulingv1alpha2.MultiPodGroup)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
+		switch op.Request.SubresourcePath() {
+		case "/":
+			return Validate_MultiPodGroup(ctx, op, nil /* fldPath */, obj.(*schedulingv1alpha2.MultiPodGroup), safe.Cast[*schedulingv1alpha2.MultiPodGroup](oldObj))
+		}
+		return field.ErrorList{field.InternalError(nil, fmt.Errorf("no validation found for %T, subresource: %v", obj, op.Request.SubresourcePath()))}
+	})
 	// type PodGroup
 	scheme.AddValidationFunc((*schedulingv1alpha2.PodGroup)(nil), func(ctx context.Context, op operation.Operation, obj, oldObj interface{}) field.ErrorList {
 		switch op.Request.SubresourcePath() {
@@ -91,6 +99,106 @@ func Validate_GangSchedulingPolicy(ctx context.Context, op operation.Operation, 
 			errs = append(errs, validate.Minimum(ctx, op, fldPath, obj, oldObj, 1)...)
 			return
 		}(fldPath.Child("minCount"), &obj.MinCount, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.GangSchedulingPolicy) *int32 { return &oldObj.MinCount }), oldObj != nil)...)
+
+	return errs
+}
+
+// Validate_MultiPodGroup validates an instance of MultiPodGroup according
+// to declarative validation rules in the API schema.
+func Validate_MultiPodGroup(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.MultiPodGroup) (errs field.ErrorList) {
+	// field schedulingv1alpha2.MultiPodGroup.TypeMeta has no validation
+	// field schedulingv1alpha2.MultiPodGroup.ObjectMeta has no validation
+
+	// field schedulingv1alpha2.MultiPodGroup.Spec
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.MultiPodGroupSpec, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_MultiPodGroupSpec(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("spec"), &obj.Spec, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.MultiPodGroup) *schedulingv1alpha2.MultiPodGroupSpec {
+			return &oldObj.Spec
+		}), oldObj != nil)...)
+
+	// field schedulingv1alpha2.MultiPodGroup.Status has no validation
+	return errs
+}
+
+// Validate_MultiPodGroupSpec validates an instance of MultiPodGroupSpec according
+// to declarative validation rules in the API schema.
+func Validate_MultiPodGroupSpec(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.MultiPodGroupSpec) (errs field.ErrorList) {
+	// field schedulingv1alpha2.MultiPodGroupSpec.ParentRef
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.ParentReference, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_ParentReference(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("parentRef"), obj.ParentRef, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.MultiPodGroupSpec) *schedulingv1alpha2.ParentReference {
+			return oldObj.ParentRef
+		}), oldObj != nil)...)
+
+	// field schedulingv1alpha2.MultiPodGroupSpec.SchedulingPolicy
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.PodGroupSchedulingPolicy, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && equality.Semantic.DeepEqual(obj, oldObj) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.Immutable(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_PodGroupSchedulingPolicy(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("schedulingPolicy"), &obj.SchedulingPolicy, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.MultiPodGroupSpec) *schedulingv1alpha2.PodGroupSchedulingPolicy {
+			return &oldObj.SchedulingPolicy
+		}), oldObj != nil)...)
+
+	return errs
+}
+
+// Validate_ParentReference validates an instance of ParentReference according
+// to declarative validation rules in the API schema.
+func Validate_ParentReference(ctx context.Context, op operation.Operation, fldPath *field.Path, obj, oldObj *schedulingv1alpha2.ParentReference) (errs field.ErrorList) {
+	// field schedulingv1alpha2.ParentReference.Name
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *string, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.RequiredValue(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				errs = append(errs, e...)
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			return
+		}(fldPath.Child("name"), &obj.Name, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.ParentReference) *string { return &oldObj.Name }), oldObj != nil)...)
 
 	return errs
 }
@@ -549,6 +657,28 @@ func Validate_PodGroupSpec(ctx context.Context, op operation.Operation, fldPath 
 			})...)
 			return
 		}(fldPath.Child("priority"), obj.Priority, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.PodGroupSpec) *int32 { return oldObj.Priority }), oldObj != nil)...)
+
+	// field schedulingv1alpha2.PodGroupSpec.ParentRef
+	errs = append(errs,
+		func(fldPath *field.Path, obj, oldObj *schedulingv1alpha2.ParentReference, oldValueCorrelated bool) (errs field.ErrorList) {
+			// don't revalidate unchanged data
+			if oldValueCorrelated && op.Type == operation.Update && (obj == oldObj || (obj != nil && oldObj != nil && *obj == *oldObj)) {
+				return nil
+			}
+			// call field-attached validations
+			earlyReturn := false
+			if e := validate.OptionalPointer(ctx, op, fldPath, obj, oldObj); len(e) != 0 {
+				earlyReturn = true
+			}
+			if earlyReturn {
+				return // do not proceed
+			}
+			// call the type's validation function
+			errs = append(errs, Validate_ParentReference(ctx, op, fldPath, obj, oldObj)...)
+			return
+		}(fldPath.Child("parentRef"), obj.ParentRef, safe.Field(oldObj, func(oldObj *schedulingv1alpha2.PodGroupSpec) *schedulingv1alpha2.ParentReference {
+			return oldObj.ParentRef
+		}), oldObj != nil)...)
 
 	return errs
 }

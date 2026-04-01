@@ -1,6 +1,6 @@
 {
   "kind": "PodGroup",
-  "apiVersion": "scheduling.k8s.io/v1alpha2",
+  "apiVersion": "scheduling.k8s.io/v1beta1",
   "metadata": {
     "name": "nameValue",
     "generateName": "generateNameValue",
@@ -72,10 +72,7 @@
     ],
     "disruptionMode": "disruptionModeValue",
     "priorityClassName": "priorityClassNameValue",
-    "priority": 7,
-    "parentRef": {
-      "name": "nameValue"
-    }
+    "priority": 7
   },
   "status": {
     "conditions": [
