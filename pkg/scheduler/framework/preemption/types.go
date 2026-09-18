@@ -487,6 +487,15 @@ func newDomainVictim(snapshot fwk.SharedLister, pods []fwk.PodInfo, priority int
 	}, nil
 }
 
+// NewDomainVictimForTest creates a DomainVictim with explicit affected nodes for unit testing.
+func NewDomainVictimForTest(victim Victim, affectedNodes map[string]fwk.NodeInfo) *DomainVictim {
+	return &DomainVictim{
+		Victim:        victim,
+		affectedNodes: affectedNodes,
+	}
+}
+
+
 // Candidate represents a nominated node on which the preemptor can be scheduled,
 // along with the list of victims that should be evicted for the preemptor to fit the node.
 type Candidate interface {

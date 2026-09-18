@@ -490,6 +490,7 @@ func TestPreemptionAndNominatedNodeNameScenarios(t *testing.T) {
 						if !ok {
 							return nil, fmt.Errorf("unexpected plugin type %T", p)
 						}
+						preemptionPlugin.SetName(delayedPreemptionPluginName)
 
 						preemptPodFn := preemptionPlugin.Executor.PreemptPod
 						preemptionPlugin.Executor.PreemptPod = func(ctx context.Context, c preemption.Candidate, preemptor preemption.ExecutorPreemptor, victim *v1.Pod, pluginName string) (bool, error) {

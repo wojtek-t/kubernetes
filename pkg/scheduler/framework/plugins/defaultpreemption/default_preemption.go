@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"sync"
 
 	v1 "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	corev1helpers "k8s.io/component-helpers/scheduling/corev1"
 	"k8s.io/klog/v2"
 	extenderv1 "k8s.io/kube-scheduler/extender/v1"
@@ -68,6 +70,7 @@ type podGroupEvaluator interface {
 
 // DefaultPreemption is a PostFilter plugin implements the preemption logic.
 type DefaultPreemption struct {
+	name string
 	fh   fwk.Handle
 	fts  feature.Features
 	args config.DefaultPreemptionArgs
@@ -98,9 +101,22 @@ type DefaultPreemption struct {
 
 var _ fwk.PostFilterPlugin = &DefaultPreemption{}
 var _ fwk.PreEnqueuePlugin = &DefaultPreemption{}
+var _ fwk.PodGroupPostFilterPlugin = &DefaultPreemption{}
+var _ fwk.PreScorePlugin = &DefaultPreemption{}
+var _ fwk.ScorePlugin = &DefaultPreemption{}
+var _ fwk.ReservePlugin = &DefaultPreemption{}
+
+// SetName overrides the plugin name reported by Name(). Used by test harnesses that
+// register DefaultPreemption under an out-of-tree plugin name.
+func (pl *DefaultPreemption) SetName(name string) {
+	pl.name = name
+}
 
 // Name returns name of the plugin. It is used in logs, etc.
 func (pl *DefaultPreemption) Name() string {
+	if pl.name != "" {
+		return pl.name
+	}
 	return Name
 }
 
@@ -115,6 +131,7 @@ func New(_ context.Context, dpArgs runtime.Object, fh fwk.Handle, fts feature.Fe
 	}
 
 	pl := DefaultPreemption{
+		name: Name,
 		fh:   fh,
 		fts:  fts,
 		args: *args,
@@ -525,3 +542,301 @@ func (pl *DefaultPreemption) PodGroupPostFilter(ctx context.Context, state fwk.P
 	}
 	return res, status
 }
+
+const preScoreStateKey = "PreScore" + Name
+
+type preemptionScoreState struct {
+	nodeScores     map[string]int64
+	deltaVictims   map[string][]*preemption.DomainVictim
+	condemnedByPod []*preemption.DomainVictim
+}
+
+func (s *preemptionScoreState) Clone() fwk.StateData {
+	return s
+}
+
+// PreScore evaluates candidate nodes during Workload-Aware Preemption scheduling cycles.
+// It prioritizes nodes that require zero new preemptions (either naturally free capacity
+// or space freed up by already-condemned victims) and ranks remaining nodes by victim cost.
+func (pl *DefaultPreemption) PreScore(ctx context.Context, cycleState fwk.CycleState, pod *v1.Pod, nodes []fwk.NodeInfo) *fwk.Status {
+	preemptionState := preemption.PodGroupPreemptionStateFromContext(ctx)
+	if preemptionState == nil || len(nodes) == 0 {
+		return fwk.NewStatus(fwk.Skip)
+	}
+
+	type nodeVictimEval struct {
+		nodeName         string
+		victims          []*preemption.DomainVictim
+		numPDBViolations int
+	}
+	evals := make([]nodeVictimEval, len(nodes))
+	var errs []error
+	var mu sync.Mutex
+
+	evalNode := func(i int) {
+		nodeInfo := nodes[i]
+		nodeName := nodeInfo.Node().Name
+		surviving := preemptionState.SurvivingVictimsOnNode(nodeName)
+		if len(surviving) == 0 {
+			evals[i] = nodeVictimEval{nodeName: nodeName}
+			return
+		}
+		fits, err := pl.fitsWithAllSurvivingVictims(ctx, cycleState, pod, nodeInfo, surviving)
+		if err == nil && fits {
+			evals[i] = nodeVictimEval{nodeName: nodeName}
+			return
+		}
+		victims, numPDBViolations, err := pl.computeDeltaVictimsOnNode(ctx, cycleState, pod, nodeInfo, surviving, preemptionState.PDBs())
+		if err != nil {
+			mu.Lock()
+			errs = append(errs, err)
+			mu.Unlock()
+			return
+		}
+		evals[i] = nodeVictimEval{
+			nodeName:         nodeName,
+			victims:          victims,
+			numPDBViolations: numPDBViolations,
+		}
+	}
+	pl.fh.Parallelizer().Until(ctx, len(nodes), evalNode, pl.Name())
+	if len(errs) > 0 {
+		return fwk.AsStatus(utilerrors.NewAggregate(errs))
+	}
+
+	sort.Slice(evals, func(i, j int) bool {
+		return preemption.CompareVictimSets(evals[i].victims, evals[j].victims, evals[i].numPDBViolations, evals[j].numPDBViolations) < 0
+	})
+
+	// Count distinct non-empty victim ranks so we can space non-empty victim scores across [0, 80]
+	// while keeping zero-preemption nodes at MaxNodeScore (100). A gap of at least 20 points between
+	// zero-preemption (100) and preemption-required (<= 80) ensures standard score plugins cannot
+	// cause unnecessary preemptions.
+	numNonEmptyRanks := 0
+	for i := range evals {
+		if len(evals[i].victims) == 0 {
+			continue
+		}
+		if numNonEmptyRanks == 0 || preemption.CompareVictimSets(evals[i-1].victims, evals[i].victims, evals[i-1].numPDBViolations, evals[i].numPDBViolations) != 0 {
+			numNonEmptyRanks++
+		}
+	}
+
+	step := max(int64(2), int64(80)/int64(max(1, numNonEmptyRanks)))
+	nodeScores := make(map[string]int64, len(nodes))
+	deltaVictims := make(map[string][]*preemption.DomainVictim, len(nodes))
+
+	nonEmptyRank := 0
+	for i := range evals {
+		if len(evals[i].victims) == 0 {
+			nodeScores[evals[i].nodeName] = fwk.MaxNodeScore
+			continue
+		}
+		if nonEmptyRank == 0 || preemption.CompareVictimSets(evals[i-1].victims, evals[i].victims, evals[i-1].numPDBViolations, evals[i].numPDBViolations) != 0 {
+			nonEmptyRank++
+		}
+		score := max(fwk.MinNodeScore, int64(80)-int64(nonEmptyRank-1)*step)
+		nodeScores[evals[i].nodeName] = score
+		deltaVictims[evals[i].nodeName] = evals[i].victims
+	}
+
+	cycleState.Write(preScoreStateKey, &preemptionScoreState{
+		nodeScores:   nodeScores,
+		deltaVictims: deltaVictims,
+	})
+	return nil
+}
+
+// Score returns the preemption score computed during PreScore.
+func (pl *DefaultPreemption) Score(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodeInfo fwk.NodeInfo) (int64, *fwk.Status) {
+	c, err := state.Read(preScoreStateKey)
+	if err != nil {
+		return 0, nil
+	}
+	s, ok := c.(*preemptionScoreState)
+	if !ok {
+		return 0, nil
+	}
+	return s.nodeScores[nodeInfo.Node().Name], nil
+}
+
+// ScoreExtensions returns nil as PreScore already normalizes scores into [MinNodeScore, MaxNodeScore].
+func (pl *DefaultPreemption) ScoreExtensions() fwk.ScoreExtensions {
+	return nil
+}
+
+// Reserve records newly condemned victims when a pod in a PodGroup is tentatively assumed on nodeName.
+func (pl *DefaultPreemption) Reserve(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodeName string) *fwk.Status {
+	preemptionState := preemption.PodGroupPreemptionStateFromContext(ctx)
+	if preemptionState == nil {
+		return nil
+	}
+	c, err := state.Read(preScoreStateKey)
+	if err != nil {
+		return nil
+	}
+	s, ok := c.(*preemptionScoreState)
+	if !ok {
+		return nil
+	}
+	victims := s.deltaVictims[nodeName]
+	if len(victims) > 0 {
+		s.condemnedByPod = victims
+		preemptionState.AddCondemned(victims)
+	}
+	return nil
+}
+
+// Unreserve rolls back condemned victims recorded by Reserve if the pod assumption is reverted.
+func (pl *DefaultPreemption) Unreserve(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodeName string) {
+	preemptionState := preemption.PodGroupPreemptionStateFromContext(ctx)
+	if preemptionState == nil {
+		return
+	}
+	c, err := state.Read(preScoreStateKey)
+	if err != nil {
+		return
+	}
+	s, ok := c.(*preemptionScoreState)
+	if !ok {
+		return
+	}
+	if len(s.condemnedByPod) > 0 {
+		preemptionState.RemoveCondemned(s.condemnedByPod)
+		s.condemnedByPod = nil
+	}
+}
+
+func (pl *DefaultPreemption) fitsWithAllSurvivingVictims(
+	ctx context.Context,
+	cycleState fwk.CycleState,
+	preemptor *v1.Pod,
+	nodeInfo fwk.NodeInfo,
+	surviving []*preemption.DomainVictim,
+) (bool, error) {
+	mainNodeName := nodeInfo.Node().Name
+	nodeInfoClone := nodeInfo.Snapshot()
+	stateClone := cycleState.Clone()
+	nameToNode := map[string]fwk.NodeInfo{mainNodeName: nodeInfoClone}
+	for _, v := range surviving {
+		for name, ni := range v.AffectedNodes() {
+			if _, ok := nameToNode[name]; !ok {
+				nameToNode[name] = ni
+			}
+		}
+	}
+	for _, v := range surviving {
+		for _, pi := range v.Pods() {
+			targetNodeInfo := nameToNode[pi.GetPod().Spec.NodeName]
+			if pi.GetPod().Spec.NodeName == mainNodeName {
+				nodeInfoClone.AddPodInfo(pi)
+			}
+			status := pl.fh.RunPreFilterExtensionAddPod(ctx, stateClone, preemptor, pi, targetNodeInfo)
+			if !status.IsSuccess() {
+				return false, status.AsError()
+			}
+		}
+	}
+	status := pl.fh.RunFilterPluginsWithNominatedPods(ctx, stateClone, preemptor, nodeInfoClone)
+	return status.IsSuccess(), nil
+}
+
+func (pl *DefaultPreemption) computeDeltaVictimsOnNode(
+	ctx context.Context,
+	cycleState fwk.CycleState,
+	preemptor *v1.Pod,
+	nodeInfo fwk.NodeInfo,
+	surviving []*preemption.DomainVictim,
+	pdbs []*policy.PodDisruptionBudget,
+) ([]*preemption.DomainVictim, int, error) {
+	logger := klog.FromContext(ctx)
+	mainNodeName := nodeInfo.Node().Name
+	nodeInfoClone := nodeInfo.Snapshot()
+	stateClone := cycleState.Clone()
+	nameToNode := map[string]fwk.NodeInfo{mainNodeName: nodeInfoClone}
+	for _, v := range surviving {
+		for name, ni := range v.AffectedNodes() {
+			if _, ok := nameToNode[name]; !ok {
+				nameToNode[name] = ni
+			}
+		}
+	}
+
+	addVictim := func(v *preemption.DomainVictim) error {
+		for _, pi := range v.Pods() {
+			targetNodeInfo := nameToNode[pi.GetPod().Spec.NodeName]
+			if pi.GetPod().Spec.NodeName == mainNodeName {
+				nodeInfoClone.AddPodInfo(pi)
+			}
+			status := pl.fh.RunPreFilterExtensionAddPod(ctx, stateClone, preemptor, pi, targetNodeInfo)
+			if !status.IsSuccess() {
+				return status.AsError()
+			}
+		}
+		return nil
+	}
+
+	removeVictim := func(v *preemption.DomainVictim) error {
+		for _, pi := range v.Pods() {
+			targetNodeInfo := nameToNode[pi.GetPod().Spec.NodeName]
+			if pi.GetPod().Spec.NodeName == mainNodeName {
+				if err := nodeInfoClone.RemovePod(logger, pi.GetPod()); err != nil {
+					return err
+				}
+			}
+			status := pl.fh.RunPreFilterExtensionRemovePod(ctx, stateClone, preemptor, pi, targetNodeInfo)
+			if !status.IsSuccess() {
+				return status.AsError()
+			}
+		}
+		return nil
+	}
+
+	sortedSurviving := make([]*preemption.DomainVictim, len(surviving))
+	copy(sortedSurviving, surviving)
+	sort.Slice(sortedSurviving, func(i, j int) bool {
+		return pl.MoreImportantVictim(sortedSurviving[i], sortedSurviving[j])
+	})
+
+	violatingVictims, nonViolatingVictims := preemption.FilterVictimsWithPDBViolation(sortedSurviving, pdbs)
+	var deltaVictims []*preemption.DomainVictim
+	numPDBViolations := 0
+
+	reprieve := func(v *preemption.DomainVictim) (bool, error) {
+		if err := addVictim(v); err != nil {
+			return false, err
+		}
+		status := pl.fh.RunFilterPluginsWithNominatedPods(ctx, stateClone, preemptor, nodeInfoClone)
+		if !status.IsSuccess() {
+			if err := removeVictim(v); err != nil {
+				return false, err
+			}
+			deltaVictims = append(deltaVictims, v)
+			return false, nil
+		}
+		return true, nil
+	}
+
+	for _, vv := range violatingVictims {
+		fits, err := reprieve(vv.Victim)
+		if err != nil {
+			return nil, 0, err
+		}
+		if !fits {
+			numPDBViolations += vv.ViolateCount
+		}
+	}
+	for _, v := range nonViolatingVictims {
+		if _, err := reprieve(v); err != nil {
+			return nil, 0, err
+		}
+	}
+
+	if len(violatingVictims) != 0 && len(nonViolatingVictims) != 0 {
+		sort.Slice(deltaVictims, func(i, j int) bool {
+			return pl.MoreImportantVictim(deltaVictims[i], deltaVictims[j])
+		})
+	}
+	return deltaVictims, numPDBViolations, nil
+}
+

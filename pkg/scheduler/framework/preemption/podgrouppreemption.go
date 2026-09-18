@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -234,7 +235,8 @@ func (ev *PodGroupEvaluator) selectVictimsOnDomain(
 	}
 
 	// If the scheduling failed after removing all potential victims, return the status.
-	podGroupAssignments, status := podGroupSchedulingFunc(ctx)
+	preemptionState := NewPodGroupPreemptionState(potentialVictims, pdbs)
+	podGroupAssignments, status := podGroupSchedulingFunc(WithPodGroupPreemptionState(ctx, preemptionState))
 	if !status.IsSuccess() {
 		return nil, status
 	}
@@ -425,3 +427,99 @@ func buildCurrentNominatingInfos(preemptor *podGroupPreemptor) map[types.Namespa
 	}
 	return n
 }
+
+type podGroupPreemptionStateKey struct{}
+
+// PodGroupPreemptionState tracks dynamic victim eviction state across sequential
+// pod scheduling attempts within a single PodGroup preemption evaluation.
+type PodGroupPreemptionState struct {
+	mu sync.RWMutex
+
+	// victimsByNode maps nodeName -> list of potential DomainVictims that have
+	// at least one pod scheduled on that node.
+	victimsByNode map[string][]*DomainVictim
+
+	// condemnedRefCount tracks how many assumed preemptor pods require a given
+	// DomainVictim to be evicted. Reference counting ensures clean rollback on Unreserve.
+	condemnedRefCount map[*DomainVictim]int
+
+	// pdbs caches the cluster PodDisruptionBudgets for PDB violation checks.
+	pdbs []*policy.PodDisruptionBudget
+}
+
+// NewPodGroupPreemptionState initializes dynamic victim tracking state for a PodGroup preemption cycle.
+func NewPodGroupPreemptionState(potentialVictims []*DomainVictim, pdbs []*policy.PodDisruptionBudget) *PodGroupPreemptionState {
+	victimsByNode := make(map[string][]*DomainVictim)
+	for _, v := range potentialVictims {
+		for nodeName := range v.AffectedNodes() {
+			victimsByNode[nodeName] = append(victimsByNode[nodeName], v)
+		}
+	}
+	return &PodGroupPreemptionState{
+		victimsByNode:     victimsByNode,
+		condemnedRefCount: make(map[*DomainVictim]int),
+		pdbs:              pdbs,
+	}
+}
+
+// WithPodGroupPreemptionState attaches PodGroupPreemptionState to the context.
+func WithPodGroupPreemptionState(ctx context.Context, state *PodGroupPreemptionState) context.Context {
+	return context.WithValue(ctx, podGroupPreemptionStateKey{}, state)
+}
+
+// PodGroupPreemptionStateFromContext retrieves PodGroupPreemptionState from the context, or nil if not present.
+func PodGroupPreemptionStateFromContext(ctx context.Context) *PodGroupPreemptionState {
+	state, _ := ctx.Value(podGroupPreemptionStateKey{}).(*PodGroupPreemptionState)
+	return state
+}
+
+// SurvivingVictimsOnNode returns all potential victims on nodeName that have not yet been condemned.
+func (s *PodGroupPreemptionState) SurvivingVictimsOnNode(nodeName string) []*DomainVictim {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	victims := s.victimsByNode[nodeName]
+	if len(victims) == 0 {
+		return nil
+	}
+	var surviving []*DomainVictim
+	for _, v := range victims {
+		if s.condemnedRefCount[v] == 0 {
+			surviving = append(surviving, v)
+		}
+	}
+	return surviving
+}
+
+// AddCondemned marks the given victims as condemned by incrementing their reference counts.
+func (s *PodGroupPreemptionState) AddCondemned(victims []*DomainVictim) {
+	if len(victims) == 0 {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, v := range victims {
+		s.condemnedRefCount[v]++
+	}
+}
+
+// RemoveCondemned decrements the reference counts for the given victims when a pod assumption is unreserved.
+func (s *PodGroupPreemptionState) RemoveCondemned(victims []*DomainVictim) {
+	if len(victims) == 0 {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, v := range victims {
+		if count := s.condemnedRefCount[v]; count > 1 {
+			s.condemnedRefCount[v] = count - 1
+		} else {
+			delete(s.condemnedRefCount, v)
+		}
+	}
+}
+
+// PDBs returns the cached PodDisruptionBudgets.
+func (s *PodGroupPreemptionState) PDBs() []*policy.PodDisruptionBudget {
+	return s.pdbs
+}
+
