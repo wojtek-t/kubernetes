@@ -460,14 +460,8 @@ func (p *PodGroupSchedulingAlgorithm) podGroupSchedulingPlacementAlgorithm(ctx c
 	var anyResult *PodGroupScheduledResult
 	successfulResults := make(map[*fwk.Placement]*PodGroupScheduledResult)
 
-	parentPlacement := p.nodeInfoSnapshot.GetPlacement()
-	defer func() {
-		p.nodeInfoSnapshot.ForgetPlacement()
-		err := p.nodeInfoSnapshot.AssumePlacement(parentPlacement)
-		if err != nil {
-			finalResult.status = fwk.AsStatus(fmt.Errorf("failed to restore parent pod group placement: %w", err))
-		}
-	}()
+	parentPlacement := p.nodeInfoSnapshot.SavePlacement()
+	defer p.nodeInfoSnapshot.RestorePlacement(parentPlacement)
 
 	// Try the placement that contains the pods' NominatedNodeName first, as pod-by-pod scheduling
 	// tries a pod's nominated node first. Preemption sets NominatedNodeName on individual pods in a
@@ -581,14 +575,8 @@ func (p *PodGroupSchedulingAlgorithm) compositePodGroupSchedulingPlacementAlgori
 	var anyResultSubtree map[fwk.EntityKey]*PodGroupScheduledResult
 	successfulResults := make(map[*fwk.Placement]map[fwk.EntityKey]*PodGroupScheduledResult)
 
-	parentPlacement := p.nodeInfoSnapshot.GetPlacement()
-	defer func() {
-		p.nodeInfoSnapshot.ForgetPlacement()
-		err := p.nodeInfoSnapshot.AssumePlacement(parentPlacement)
-		if err != nil {
-			finalResult.status = fwk.AsStatus(fmt.Errorf("failed to restore parent pod group placement: %w", err))
-		}
-	}()
+	parentPlacement := p.nodeInfoSnapshot.SavePlacement()
+	defer p.nodeInfoSnapshot.RestorePlacement(parentPlacement)
 
 	// Try the placement that contains all nominated nodes in this group's subtree first, matching
 	// podGroupSchedulingPlacementAlgorithm.

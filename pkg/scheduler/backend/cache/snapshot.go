@@ -723,6 +723,17 @@ func (s *Snapshot) GetPlacement() *fwk.Placement {
 	return nil
 }
 
+// SavePlacement returns the currently assumed placement state so it can be
+// restored in O(1) via RestorePlacement.
+func (s *Snapshot) SavePlacement() *placementNodes {
+	return s.placementNodes
+}
+
+// RestorePlacement restores a placement state previously captured by SavePlacement.
+func (s *Snapshot) RestorePlacement(saved *placementNodes) {
+	s.placementNodes = saved
+}
+
 // AssumePlacement sets placement context in the snapshot.
 // The snapshot should not be updated if a placement is assumed.
 // The placement should be unset with ForgetPlacement once it's no longer needed.
@@ -739,10 +750,6 @@ func (s *Snapshot) AssumePlacement(placement *fwk.Placement) error {
 		s.ForgetPlacement()
 		return nil
 	}
-	s.placementNodes = &placementNodes{
-		placement:   placement,
-		nodeInfoSet: sets.New[string](),
-	}
 	for _, node := range placement.Nodes {
 		snapshotNode, ok := s.nodeInfoMap[node.Node().Name]
 		if !ok {
@@ -753,7 +760,9 @@ func (s *Snapshot) AssumePlacement(placement *fwk.Placement) error {
 			s.ForgetPlacement()
 			return fmt.Errorf("node %s in placement is not the same instance as in the snapshot", node.Node().Name)
 		}
-		s.placementNodes.nodeInfoSet.Insert(node.Node().Name)
+	}
+	s.placementNodes = &placementNodes{
+		placement: placement,
 	}
 	return nil
 }
@@ -772,7 +781,25 @@ func (s *Snapshot) ForgetPlacement() {
 // Plugins normally do not need this information.
 // This function is not thread safe so it should be executed when no other routines can write to the snapshot.
 func (s *Snapshot) GetNodeInPlacement(nodeName string) (fwk.NodeInfo, error) {
-	if s.placementNodes == nil || s.placementNodes.nodeInfoSet.Has(nodeName) {
+	if s.placementNodes == nil {
+		return s.Get(nodeName)
+	}
+	nodes := s.placementNodes.placement.Nodes
+	if len(nodes) <= 16 {
+		for _, n := range nodes {
+			if n.Node().Name == nodeName {
+				return n, nil
+			}
+		}
+		return nil, fmt.Errorf("node %q not found in placement", nodeName)
+	}
+	if s.placementNodes.nodeInfoSet == nil {
+		s.placementNodes.nodeInfoSet = make(sets.Set[string], len(nodes))
+		for _, n := range nodes {
+			s.placementNodes.nodeInfoSet.Insert(n.Node().Name)
+		}
+	}
+	if s.placementNodes.nodeInfoSet.Has(nodeName) {
 		return s.Get(nodeName)
 	}
 	return nil, fmt.Errorf("node %q not found in placement", nodeName)
