@@ -53,6 +53,12 @@ func (pl *TopologyPlacement) Name() string {
 	return Name
 }
 
+// topologyPlacementsCache is implemented by the scheduler snapshot to cache
+// root-level topology domain placements across scheduling cycles.
+type topologyPlacementsCache interface {
+	GetTopologyPlacements(topologyKey string, parentNodes []fwk.NodeInfo, requiredDomain *string) ([]*fwk.Placement, bool)
+}
+
 // GeneratePlacements generates placements for a pod group based on the topology constraints in the pod group spec.
 // It uses the parent placement to find the nodes that are available for placement.
 func (pl *TopologyPlacement) GeneratePlacements(ctx context.Context, state fwk.PodGroupCycleState, podGroup fwk.PodGroupInfo, parentPlacement *fwk.Placement) (*fwk.GeneratePlacementsResult, *fwk.Status) {
@@ -73,6 +79,12 @@ func (pl *TopologyPlacement) GeneratePlacements(ctx context.Context, state fwk.P
 			return nil, fwk.AsStatus(fmt.Errorf("cannot determine domain for already scheduled pods: %w", err))
 		}
 		requiredDomain = &scheduledDomain
+	}
+
+	if cache, ok := pl.handle.SnapshotSharedLister().(topologyPlacementsCache); ok {
+		if placements, cached := cache.GetTopologyPlacements(topologyKey, parentPlacement.Nodes, requiredDomain); cached {
+			return &fwk.GeneratePlacementsResult{Placements: placements}, nil
+		}
 	}
 
 	nodesPerTopologyDomain := make(map[string][]fwk.NodeInfo)

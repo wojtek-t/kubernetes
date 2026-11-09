@@ -42,6 +42,11 @@ type placementNodes struct {
 	nodeInfoSet sets.Set[string]
 }
 
+type topologyDomainIndex struct {
+	placements []*fwk.Placement
+	byDomain   map[string]*fwk.Placement
+}
+
 // snapshotBackupData stores shallow copies of original snapshot data.
 type snapshotBackupData struct {
 	nodeInfoMap                                               map[string]*framework.NodeInfo
@@ -122,6 +127,9 @@ type Snapshot struct {
 	// opportunistic batching can invalidate node hints across placement transitions
 	// within a single pod group scheduling cycle.
 	placementGeneration uint64
+	// topologyDomains caches topology domain placements keyed by topology label key
+	// across scheduling cycles as long as node membership and labels are unchanged.
+	topologyDomains map[string]*topologyDomainIndex
 	// genericWorkloadEnabled stores the GenericWorkload feature gate value.
 	genericWorkloadEnabled bool
 	// snapshotBackup is used for storing original
@@ -829,6 +837,51 @@ func (s *Snapshot) ListNodesInPlacement() ([]fwk.NodeInfo, error) {
 		return s.List()
 	}
 	return s.placementNodes.placement.Nodes, nil
+}
+
+// GetTopologyPlacements returns cached placements for topologyKey when parentNodes is the
+// full unmodified snapshot nodeInfoList outside of a mutation session.
+func (s *Snapshot) GetTopologyPlacements(topologyKey string, parentNodes []fwk.NodeInfo, requiredDomain *string) ([]*fwk.Placement, bool) {
+	if s.snapshotBackup != nil || len(parentNodes) != len(s.nodeInfoList) {
+		return nil, false
+	}
+	if len(s.nodeInfoList) > 0 && &parentNodes[0] != &s.nodeInfoList[0] {
+		return nil, false
+	}
+	idx, ok := s.topologyDomains[topologyKey]
+	if !ok {
+		nodesPerDomain := make(map[string][]fwk.NodeInfo)
+		for _, node := range s.nodeInfoList {
+			if domain, ok := node.Node().Labels[topologyKey]; ok && domain != "" {
+				nodesPerDomain[domain] = append(nodesPerDomain[domain], node)
+			}
+		}
+		placements := make([]*fwk.Placement, 0, len(nodesPerDomain))
+		byDomain := make(map[string]*fwk.Placement, len(nodesPerDomain))
+		for domain, nodes := range nodesPerDomain {
+			p := &fwk.Placement{
+				Name:  domain,
+				Nodes: nodes,
+			}
+			placements = append(placements, p)
+			byDomain[domain] = p
+		}
+		if s.topologyDomains == nil {
+			s.topologyDomains = make(map[string]*topologyDomainIndex)
+		}
+		idx = &topologyDomainIndex{
+			placements: placements,
+			byDomain:   byDomain,
+		}
+		s.topologyDomains[topologyKey] = idx
+	}
+	if requiredDomain != nil {
+		if p, ok := idx.byDomain[*requiredDomain]; ok {
+			return []*fwk.Placement{p}, true
+		}
+		return nil, true
+	}
+	return idx.placements, true
 }
 
 // AddPod adds a pod to the snapshot.

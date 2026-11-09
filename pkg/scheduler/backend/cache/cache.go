@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"sync"
 	"time"
@@ -249,6 +250,7 @@ func (cache *cacheImpl) UpdateSnapshot(logger klog.Logger, nodeSnapshot *Snapsho
 	// from having pods with required anti-affinity with topologyKey other than kubernetes.io/hostname to NOT
 	// having such pods, or the other way around.
 	updateNodesHavePodsWithRequiredNonHostScopedAntiAffinity := false
+	updateTopologyDomains := false
 
 	// Start from the head of the NodeInfo doubly linked list and update snapshot
 	// of NodeInfos updated after the last snapshot.
@@ -265,6 +267,9 @@ func (cache *cacheImpl) UpdateSnapshot(logger klog.Logger, nodeSnapshot *Snapsho
 				nodeSnapshot.nodeInfoMap[np.Name] = existing
 			}
 			clone := node.info.SnapshotConcrete()
+			if existing.Node() == nil || !maps.Equal(existing.Node().Labels, clone.Node().Labels) {
+				updateTopologyDomains = true
+			}
 			// We track nodes that have pods with affinity, here we check if this node changed its
 			// status from having pods with affinity to NOT having pods with affinity or the other
 			// way around.
@@ -304,6 +309,10 @@ func (cache *cacheImpl) UpdateSnapshot(logger klog.Logger, nodeSnapshot *Snapsho
 		}
 	}
 
+	if updateAllLists || updateTopologyDomains {
+		nodeSnapshot.topologyDomains = nil
+	}
+
 	if updateAllLists || updateNodesHavePodsWithAffinity || updateNodesHavePodsWithRequiredAntiAffinity || updateNodesHavePodsWithRequiredNonHostScopedAntiAffinity {
 		cache.updateNodeInfoSnapshotList(logger, nodeSnapshot, updateAllLists)
 	}
@@ -317,6 +326,7 @@ func (cache *cacheImpl) UpdateSnapshot(logger klog.Logger, nodeSnapshot *Snapsho
 		logger.Error(nil, errMsg)
 		// We will try to recover by re-creating the lists for the next scheduling cycle, but still return an
 		// error to surface the problem, the error will likely cause a failure to the current scheduling cycle.
+		nodeSnapshot.topologyDomains = nil
 		cache.updateNodeInfoSnapshotList(logger, nodeSnapshot, true)
 		return errors.New(errMsg)
 	}

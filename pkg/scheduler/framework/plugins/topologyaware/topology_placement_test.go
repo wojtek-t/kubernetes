@@ -35,6 +35,7 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/feature"
 	"k8s.io/kubernetes/pkg/scheduler/framework/runtime"
+	"k8s.io/kubernetes/pkg/scheduler/metrics"
 	st "k8s.io/kubernetes/pkg/scheduler/testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -560,4 +561,58 @@ func makePodGroup(topologyKey string) fwk.PodGroupInfo {
 
 func makeCompositePodGroup(topologyKey string) fwk.PodGroupInfo {
 	return makePodGroupInfoFromCPG(st.MakeCompositePodGroup().Name("root").Namespace("default").TopologyKey(topologyKey).Obj())
+}
+
+func TestGeneratePlacementsSnapshotCache(t *testing.T) {
+	featuregatetesting.SetFeatureGatesDuringTest(t, utilfeature.DefaultFeatureGate, featuregatetesting.FeatureOverrides{
+		features.GenericWorkload:                 true,
+		features.TopologyAwareWorkloadScheduling: true,
+	})
+	metrics.Register()
+	logger, tCtx := ktesting.NewTestContext(t)
+
+	n1 := st.MakeNode().Name("node1").Label("rack", "r1").Obj()
+	n2 := st.MakeNode().Name("node2").Label("rack", "r2").Obj()
+	pgInfo := makePodGroup("rack")
+
+	c := cache.New(tCtx, nil, true, true)
+	c.AddNode(logger, n1)
+	c.AddNode(logger, n2)
+	c.AddGenericPodGroup(fwk.NewGenericPodGroup(pgInfo.GetPodGroup()))
+
+	snapshot := cache.NewEmptySnapshot()
+	if err := c.UpdateSnapshot(logger, snapshot); err != nil {
+		t.Fatalf("UpdateSnapshot failed: %v", err)
+	}
+
+	fh, _ := runtime.NewFramework(tCtx, nil, nil, runtime.WithSnapshotSharedLister(snapshot))
+	pl, err := New(tCtx, nil, fh, feature.Features{})
+	if err != nil {
+		t.Fatalf("failed when creating plugin: %v", err)
+	}
+
+	allNodes, _ := snapshot.ListNodesInPlacement()
+	res1, status := pl.GeneratePlacements(tCtx, framework.NewCycleState(), pgInfo, &fwk.Placement{Nodes: allNodes})
+	if !status.IsSuccess() || len(res1.Placements) != 2 {
+		t.Fatalf("unexpected first GeneratePlacements result: len=%d, status=%v", len(res1.Placements), status)
+	}
+
+	// Second call with unchanged snapshot reuses the cached slice.
+	res2, status := pl.GeneratePlacements(tCtx, framework.NewCycleState(), pgInfo, &fwk.Placement{Nodes: allNodes})
+	if !status.IsSuccess() || &res1.Placements[0] != &res2.Placements[0] {
+		t.Fatalf("expected cached placements slice to be reused across calls")
+	}
+
+	// Updating a node's topology label invalidates the cache on UpdateSnapshot.
+	n2Updated := n2.DeepCopy()
+	n2Updated.Labels["rack"] = "r1"
+	c.UpdateNode(logger, n2, n2Updated)
+	if err := c.UpdateSnapshot(logger, snapshot); err != nil {
+		t.Fatalf("UpdateSnapshot failed: %v", err)
+	}
+	allNodes, _ = snapshot.ListNodesInPlacement()
+	res3, status := pl.GeneratePlacements(tCtx, framework.NewCycleState(), pgInfo, &fwk.Placement{Nodes: allNodes})
+	if !status.IsSuccess() || len(res3.Placements) != 1 || len(res3.Placements[0].Nodes) != 2 {
+		t.Fatalf("expected 1 domain with 2 nodes after label update, got %+v (status=%v)", res3.Placements, status)
+	}
 }
