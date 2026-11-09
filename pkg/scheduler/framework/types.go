@@ -1332,6 +1332,18 @@ func (pi *PodInfo) DeepCopy() *PodInfo {
 	}
 }
 
+// ShallowCopyForSnapshot returns a shallow copy of PodInfo pointing to podCopy
+// for transient snapshot assumptions. If clearCachedResource is true, cachedResource
+// is cleared so CalculateResource recomputes it.
+func (pi *PodInfo) ShallowCopyForSnapshot(podCopy *v1.Pod, clearCachedResource bool) *PodInfo {
+	cp := *pi
+	cp.Pod = podCopy
+	if clearCachedResource {
+		cp.cachedResource = nil
+	}
+	return &cp
+}
+
 // Update updates the pod pointer in PodInfo if the passed pod has the same UID.
 // It returns an error if the UIDs mismatch.
 func (pi *PodInfo) Update(pod *v1.Pod) error {

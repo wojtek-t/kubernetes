@@ -684,6 +684,27 @@ func (a *SchedulingAlgorithm) prepareAssumedPod(logger klog.Logger, state fwk.Cy
 	return assumedPodInfo
 }
 
+// prepareAssumedPodForSnapshot returns a lightweight shallow copy of podInfo for transient
+// assumptions in the snapshot during a pod group scheduling cycle, avoiding a full
+// v1.Pod.DeepCopy() on every tentative pod evaluation.
+func (a *SchedulingAlgorithm) prepareAssumedPodForSnapshot(logger klog.Logger, state fwk.CycleState,
+	podInfo *framework.QueuedPodInfo, host string) *framework.QueuedPodInfo {
+
+	podCopy := *podInfo.Pod
+	podCopy.Spec.NodeName = host
+	clearCachedResource := false
+	if utilfeature.DefaultFeatureGate.Enabled(features.DRANodeAllocatableResources) {
+		claimStatuses := dynamicresources.ExtractPodNodeAllocatableResourceClaimStatus(logger, state, host)
+		if len(claimStatuses) > 0 || len(podCopy.Status.NodeAllocatableResourceClaimStatuses) > 0 {
+			podCopy.Status.NodeAllocatableResourceClaimStatuses = claimStatuses
+			clearCachedResource = true
+		}
+	}
+	assumedPodInfo := *podInfo
+	assumedPodInfo.PodInfo = podInfo.PodInfo.ShallowCopyForSnapshot(&podCopy, clearCachedResource)
+	return &assumedPodInfo
+}
+
 // reserve runs Reserve plugins for the assumed pod and converts plugin rejections
 // into a single-node FitError.
 func (a *SchedulingAlgorithm) reserve(ctx context.Context, state fwk.CycleState,
@@ -790,7 +811,7 @@ func (a *SchedulingAlgorithm) AssumeAndReserveInSnapshot(ctx context.Context, st
 	logger := klog.FromContext(ctx)
 	host := scheduleResult.SuggestedHost
 
-	assumedPodInfo := a.prepareAssumedPod(logger, state, podInfo, host)
+	assumedPodInfo := a.prepareAssumedPodForSnapshot(logger, state, podInfo, host)
 	if err := a.nodeInfoSnapshot.AssumePod(assumedPodInfo.PodInfo); err != nil {
 		logger.Error(err, "Scheduler snapshot AssumePod failed")
 		return fwk.AsStatus(err), nil
