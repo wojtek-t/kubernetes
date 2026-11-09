@@ -2085,9 +2085,13 @@ func (p *PriorityQueue) Close() {
 // but they are waiting for other pods to be removed from the node.
 // CAUTION: Make sure you don't call this function while taking any queue's lock in any scenario.
 func (p *PriorityQueue) NominatedPodsForNode(logger klog.Logger, nodeName string) []fwk.PodInfo {
+	nominatedPods := p.nominator.nominatedPodsForNode(nodeName)
+	if len(nominatedPods) == 0 {
+		return []fwk.PodInfo{}
+	}
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	nominatedPods := p.nominator.nominatedPodsForNode(nodeName)
+	nominatedPods = p.nominator.nominatedPodsForNode(nodeName)
 	if len(nominatedPods) == 0 {
 		return []fwk.PodInfo{}
 	}

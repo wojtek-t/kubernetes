@@ -19,6 +19,7 @@ package queue
 import (
 	"slices"
 	"sync"
+	"sync/atomic"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,6 +51,9 @@ type nominator struct {
 	// nominatedPodToNode is map keyed by a Pod UID to the node name where it is
 	// nominated.
 	nominatedPodToNode map[types.UID]string
+	// nominatedPodsCount tracks len(nominatedPodToNode) atomically so callers can
+	// skip lock acquisition when no pods are nominated in the cluster.
+	nominatedPodsCount atomic.Int32
 }
 
 func newPodNominator(podLister listersv1.PodLister) *nominator {
@@ -101,6 +105,7 @@ func (npm *nominator) addNominatedPodUnlocked(logger klog.Logger, pi fwk.PodInfo
 	}
 
 	npm.nominatedPodToNode[pi.GetPod().UID] = nodeName
+	npm.nominatedPodsCount.Store(int32(len(npm.nominatedPodToNode)))
 	for _, np := range npm.nominatedPods[nodeName] {
 		if np.uid == pi.GetPod().UID {
 			logger.V(4).Info("Pod already exists in the nominator", "pod", np.uid)
@@ -139,6 +144,9 @@ func (npm *nominator) UpdateNominatedPod(logger klog.Logger, oldPod *v1.Pod, new
 
 // DeleteNominatedPodIfExists deletes <pod> from nominatedPods.
 func (npm *nominator) DeleteNominatedPodIfExists(pod *v1.Pod) {
+	if npm.nominatedPodsCount.Load() == 0 {
+		return
+	}
 	npm.nLock.Lock()
 	npm.deleteUnlocked(pod)
 	npm.nLock.Unlock()
@@ -159,9 +167,13 @@ func (npm *nominator) deleteUnlocked(p *v1.Pod) {
 		}
 	}
 	delete(npm.nominatedPodToNode, p.UID)
+	npm.nominatedPodsCount.Store(int32(len(npm.nominatedPodToNode)))
 }
 
 func (npm *nominator) nominatedPodsForNode(nodeName string) []podRef {
+	if npm.nominatedPodsCount.Load() == 0 {
+		return nil
+	}
 	npm.nLock.RLock()
 	defer npm.nLock.RUnlock()
 	return slices.Clone(npm.nominatedPods[nodeName])
