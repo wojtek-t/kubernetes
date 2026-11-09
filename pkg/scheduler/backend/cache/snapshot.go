@@ -111,6 +111,8 @@ type Snapshot struct {
 	podGroupStates map[fwk.EntityKey]*podGroupStateSnapshot
 	// compositePodGroupStates maps a pod group key to a snapshot of its state, used during a pod group scheduling cycle.
 	compositePodGroupStates map[fwk.EntityKey]*compositePodGroupStateSnapshot
+	// podGroupStateGeneration tracks the cache podGroupStateGeneration last synced to this snapshot.
+	podGroupStateGeneration int64
 	// placementNodes stores nodes that are present in the current placement.
 	// If placement is not set, this is nil.
 	// It should only be set in the pod group scheduling cycle, when checking if pod group can be scheduled within the placement.
@@ -596,7 +598,9 @@ func (s *Snapshot) AssumePod(podInfo *framework.PodInfo) error {
 	}
 	pgKey := fwk.PodGroupKey(pod.Namespace, *pod.Spec.SchedulingGroup.PodGroupName)
 	if pgs, ok := s.podGroupStates[pgKey]; ok {
+		oldGen := pgs.generation
 		pgs.assumePod(pod)
+		pgs.generation = oldGen
 	}
 	return nil
 }
@@ -667,7 +671,9 @@ func (s *Snapshot) ForgetPod(logger klog.Logger, pod *v1.Pod) error {
 	}
 	pgKey := fwk.PodGroupKey(assumedPod.Namespace, *assumedPod.Spec.SchedulingGroup.PodGroupName)
 	if pgs, ok := s.podGroupStates[pgKey]; ok {
+		oldGen := pgs.generation
 		pgs.forgetPod(assumedPod.UID)
+		pgs.generation = oldGen
 	}
 	return nil
 }

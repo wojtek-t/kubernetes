@@ -82,6 +82,14 @@ type cacheImpl struct {
 	podGroupStates map[fwk.EntityKey]*podGroupState
 	// compositePodGroupStates stores the runtime state for each known composite pod group (only if CompositePodGroup feature gate is enabled).
 	compositePodGroupStates map[fwk.EntityKey]*compositePodGroupState
+	// dirtyPodGroupStates and deletedPodGroupStates track keys mutated since the last UpdateSnapshot.
+	dirtyPodGroupStates   sets.Set[fwk.EntityKey]
+	deletedPodGroupStates sets.Set[fwk.EntityKey]
+	// dirtyCompositePodGroupStates and deletedCompositePodGroupStates track keys mutated since the last UpdateSnapshot.
+	dirtyCompositePodGroupStates   sets.Set[fwk.EntityKey]
+	deletedCompositePodGroupStates sets.Set[fwk.EntityKey]
+	// podGroupStateGeneration is the generation of podGroupStates/compositePodGroupStates last synced to a Snapshot.
+	podGroupStateGeneration int64
 	// genericWorkloadEnabled stores the GenericWorkload feature gate value.
 	genericWorkloadEnabled bool
 	// compositePodGroupEnabled stores the CompositePodGroup feature gate value.
@@ -113,9 +121,13 @@ func newCache(ctx context.Context, period time.Duration, apiDispatcher fwk.APIDi
 		assumedPods:              sets.New[string](),
 		podStates:                make(map[string]*podState),
 		imageStates:              make(map[string]*fwk.ImageStateSummary),
-		podGroupStates:           make(map[fwk.EntityKey]*podGroupState),
-		compositePodGroupStates:  make(map[fwk.EntityKey]*compositePodGroupState),
-		genericWorkloadEnabled:   genericWorkloadEnabled,
+		podGroupStates:                 make(map[fwk.EntityKey]*podGroupState),
+		compositePodGroupStates:        make(map[fwk.EntityKey]*compositePodGroupState),
+		dirtyPodGroupStates:            sets.New[fwk.EntityKey](),
+		deletedPodGroupStates:          sets.New[fwk.EntityKey](),
+		dirtyCompositePodGroupStates:   sets.New[fwk.EntityKey](),
+		deletedCompositePodGroupStates: sets.New[fwk.EntityKey](),
+		genericWorkloadEnabled:         genericWorkloadEnabled,
 		compositePodGroupEnabled: compositePodGroupEnabled,
 		apiDispatcher:            apiDispatcher,
 		pvcRefCountsDelta:        make(map[string]int),
@@ -310,22 +322,69 @@ func (cache *cacheImpl) UpdateSnapshot(logger klog.Logger, nodeSnapshot *Snapsho
 	}
 
 	if cache.genericWorkloadEnabled {
+		canUseDelta := cache.podGroupStateGeneration > 0 && nodeSnapshot.podGroupStateGeneration == cache.podGroupStateGeneration
+		hasDeltas := len(cache.dirtyPodGroupStates) > 0 || len(cache.deletedPodGroupStates) > 0 ||
+			len(cache.dirtyCompositePodGroupStates) > 0 || len(cache.deletedCompositePodGroupStates) > 0
 		// Take a snapshot of pod group states for this scheduling cycle.
-		cache.updatePodGroupStateSnapshot(nodeSnapshot)
+		cache.updatePodGroupStateSnapshot(nodeSnapshot, canUseDelta)
 		if cache.compositePodGroupEnabled {
 			// Take a snapshot of composite pod group states for this scheduling cycle.
-			cache.updateCompositePodGroupStateSnapshot(nodeSnapshot)
+			cache.updateCompositePodGroupStateSnapshot(nodeSnapshot, canUseDelta)
+		}
+		if !canUseDelta || hasDeltas {
+			clear(cache.dirtyPodGroupStates)
+			clear(cache.deletedPodGroupStates)
+			clear(cache.dirtyCompositePodGroupStates)
+			clear(cache.deletedCompositePodGroupStates)
+			cache.podGroupStateGeneration++
+			nodeSnapshot.podGroupStateGeneration = cache.podGroupStateGeneration
 		}
 	}
 
 	return nil
 }
 
+func (cache *cacheImpl) markPodGroupStateDirty(key fwk.EntityKey) {
+	cache.dirtyPodGroupStates.Insert(key)
+	cache.deletedPodGroupStates.Delete(key)
+}
+
+func (cache *cacheImpl) markPodGroupStateDeleted(key fwk.EntityKey) {
+	cache.deletedPodGroupStates.Insert(key)
+	cache.dirtyPodGroupStates.Delete(key)
+}
+
+func (cache *cacheImpl) markCompositePodGroupStateDirty(key fwk.EntityKey) {
+	cache.dirtyCompositePodGroupStates.Insert(key)
+	cache.deletedCompositePodGroupStates.Delete(key)
+}
+
+func (cache *cacheImpl) markCompositePodGroupStateDeleted(key fwk.EntityKey) {
+	cache.deletedCompositePodGroupStates.Insert(key)
+	cache.dirtyCompositePodGroupStates.Delete(key)
+}
+
 // updatePodGroupStateSnapshot updates the pod group state portion of the given snapshot.
 // It assumes that the cache lock is already held.
 // It removes entries that no longer exist in the live cache
 // and clones entries whose generation has advanced since the last snapshot.
-func (cache *cacheImpl) updatePodGroupStateSnapshot(snapshot *Snapshot) {
+func (cache *cacheImpl) updatePodGroupStateSnapshot(snapshot *Snapshot, canUseDelta bool) {
+	if canUseDelta {
+		for key := range cache.deletedPodGroupStates {
+			delete(snapshot.podGroupStates, key)
+		}
+		for key := range cache.dirtyPodGroupStates {
+			if podGroupState, ok := cache.podGroupStates[key]; ok {
+				if existing, ok := snapshot.podGroupStates[key]; ok && existing.generation == podGroupState.generation {
+					continue
+				}
+				snapshot.podGroupStates[key] = podGroupState.snapshot()
+			} else {
+				delete(snapshot.podGroupStates, key)
+			}
+		}
+		return
+	}
 	// Remove pod group states from snapshot that no longer exist in cache.
 	for key := range snapshot.podGroupStates {
 		if _, exists := cache.podGroupStates[key]; !exists {
@@ -345,7 +404,23 @@ func (cache *cacheImpl) updatePodGroupStateSnapshot(snapshot *Snapshot) {
 // It assumes that the cache lock is already held.
 // It removes entries that no longer exist in the live cache
 // and clones entries whose generation has advanced since the last snapshot.
-func (cache *cacheImpl) updateCompositePodGroupStateSnapshot(snapshot *Snapshot) {
+func (cache *cacheImpl) updateCompositePodGroupStateSnapshot(snapshot *Snapshot, canUseDelta bool) {
+	if canUseDelta {
+		for key := range cache.deletedCompositePodGroupStates {
+			delete(snapshot.compositePodGroupStates, key)
+		}
+		for key := range cache.dirtyCompositePodGroupStates {
+			if cpgs, ok := cache.compositePodGroupStates[key]; ok {
+				if existing, ok := snapshot.compositePodGroupStates[key]; ok && existing.generation == cpgs.generation {
+					continue
+				}
+				snapshot.compositePodGroupStates[key] = cpgs.snapshot()
+			} else {
+				delete(snapshot.compositePodGroupStates, key)
+			}
+		}
+		return
+	}
 	// Remove composite pod group states from snapshot that no longer exist in cache.
 	for key := range snapshot.compositePodGroupStates {
 		if _, exists := cache.compositePodGroupStates[key]; !exists {
@@ -922,6 +997,7 @@ func (cache *cacheImpl) addPodGroupMember(pod *v1.Pod) {
 	}
 
 	podGroupState.addPod(pod)
+	cache.markPodGroupStateDirty(key)
 }
 
 // updatePodGroupMember updates the pod entry inside its pod group state.
@@ -936,6 +1012,7 @@ func (cache *cacheImpl) updatePodGroupMember(logger klog.Logger, oldPod, newPod 
 	}
 
 	podGroupState.updatePod(oldPod, newPod)
+	cache.markPodGroupStateDirty(key)
 }
 
 // removePodGroupMember removes the pod from its pod group state, deleting the group entry when empty.
@@ -951,6 +1028,9 @@ func (cache *cacheImpl) removePodGroupMember(pod *v1.Pod) {
 		// podGroupState can exist without the member pods, but when the PodGroup object exists.
 		// Only when there are no member pods and the PodGroup object is removed, the podGroupState can be removed.
 		delete(cache.podGroupStates, key)
+		cache.markPodGroupStateDeleted(key)
+	} else {
+		cache.markPodGroupStateDirty(key)
 	}
 }
 
@@ -965,6 +1045,7 @@ func (cache *cacheImpl) assumePodGroupMember(pod *v1.Pod) {
 		cache.podGroupStates[key] = podGroupState
 	}
 	podGroupState.assumePod(pod)
+	cache.markPodGroupStateDirty(key)
 }
 
 // forgetPodGroupMember moves the pod back from assumed to unscheduled in its pod group state.
@@ -978,6 +1059,7 @@ func (cache *cacheImpl) forgetPodGroupMember(logger klog.Logger, pod *v1.Pod) {
 		return
 	}
 	pgs.forgetPod(pod.UID)
+	cache.markPodGroupStateDirty(key)
 }
 
 // PodGroupStates returns the PodGroupStateLister for this cache.
@@ -1143,6 +1225,7 @@ func (cache *cacheImpl) AddGenericPodGroup(gpg *fwk.GenericPodGroup) {
 			cache.podGroupStates[key] = pgs
 		}
 		pgs.setPodGroup(gpg.PodGroup)
+		cache.markPodGroupStateDirty(key)
 	case fwk.CompositePodGroupKeyType:
 		cpgs, exists := cache.compositePodGroupStates[key]
 		if !exists {
@@ -1150,6 +1233,7 @@ func (cache *cacheImpl) AddGenericPodGroup(gpg *fwk.GenericPodGroup) {
 			cache.compositePodGroupStates[key] = cpgs
 		}
 		cpgs.setCompositePodGroup(gpg.CompositePodGroup)
+		cache.markCompositePodGroupStateDirty(key)
 	}
 
 	// Both PodGroups and CompositePodGroups can specify a parent CompositePodGroup.
@@ -1169,6 +1253,7 @@ func (cache *cacheImpl) AddGenericPodGroup(gpg *fwk.GenericPodGroup) {
 		cache.compositePodGroupStates[parentKey] = parent
 	}
 	parent.addChild(key)
+	cache.markCompositePodGroupStateDirty(parentKey)
 }
 
 // UpdateGenericPodGroup updates an existing generic pod group object in the cache.
@@ -1187,6 +1272,7 @@ func (cache *cacheImpl) UpdateGenericPodGroup(logger klog.Logger, gpg *fwk.Gener
 			return
 		}
 		pgs.setPodGroup(gpg.PodGroup)
+		cache.markPodGroupStateDirty(key)
 	case fwk.CompositePodGroupKeyType:
 		cpgs, exists := cache.compositePodGroupStates[key]
 		if !exists {
@@ -1195,6 +1281,7 @@ func (cache *cacheImpl) UpdateGenericPodGroup(logger klog.Logger, gpg *fwk.Gener
 			return
 		}
 		cpgs.setCompositePodGroup(gpg.CompositePodGroup)
+		cache.markCompositePodGroupStateDirty(key)
 	}
 }
 
@@ -1213,6 +1300,9 @@ func (cache *cacheImpl) RemoveGenericPodGroup(logger klog.Logger, gpg *fwk.Gener
 				if parent.empty() {
 					// A state entry can exist without the API object as long as member pods or children exist.
 					delete(cache.compositePodGroupStates, parentKey)
+					cache.markCompositePodGroupStateDeleted(parentKey)
+				} else {
+					cache.markCompositePodGroupStateDirty(parentKey)
 				}
 			}
 		}
@@ -1229,6 +1319,9 @@ func (cache *cacheImpl) RemoveGenericPodGroup(logger klog.Logger, gpg *fwk.Gener
 		pgs.removePodGroup()
 		if pgs.empty() {
 			delete(cache.podGroupStates, key)
+			cache.markPodGroupStateDeleted(key)
+		} else {
+			cache.markPodGroupStateDirty(key)
 		}
 	case fwk.CompositePodGroupKeyType:
 		cpgs, exists := cache.compositePodGroupStates[key]
@@ -1240,6 +1333,9 @@ func (cache *cacheImpl) RemoveGenericPodGroup(logger klog.Logger, gpg *fwk.Gener
 		cpgs.removeCompositePodGroup()
 		if cpgs.empty() {
 			delete(cache.compositePodGroupStates, key)
+			cache.markCompositePodGroupStateDeleted(key)
+		} else {
+			cache.markCompositePodGroupStateDirty(key)
 		}
 	}
 }
