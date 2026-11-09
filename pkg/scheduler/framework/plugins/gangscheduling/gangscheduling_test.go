@@ -130,6 +130,26 @@ func Test_isSchedulableAfterPodAdded(t *testing.T) {
 			},
 			expectedHint: fwk.QueueSkip,
 		},
+		{
+			name:                       "add a newPod which matches the pod's scheduling group, but quorum is not yet met",
+			isCompositePodGroupEnabled: []bool{true, false},
+			pod:                        st.MakePod().Name("p1").UID("p1").PodGroupName("pg").Obj(),
+			newPod:                     st.MakePod().Name("p2").UID("p2").PodGroupName("pg").Obj(),
+			pgs: []*schedulingv1beta1.PodGroup{
+				st.MakePodGroup().Name("pg").MinCount(3).Obj(),
+			},
+			expectedHint: fwk.QueueSkip,
+		},
+		{
+			name:                       "add a newPod which matches the pod's scheduling group and satisfies quorum",
+			isCompositePodGroupEnabled: []bool{true, false},
+			pod:                        st.MakePod().Name("p1").UID("p1").PodGroupName("pg").Obj(),
+			newPod:                     st.MakePod().Name("p2").UID("p2").PodGroupName("pg").Obj(),
+			pgs: []*schedulingv1beta1.PodGroup{
+				st.MakePodGroup().Name("pg").MinCount(2).Obj(),
+			},
+			expectedHint: fwk.Queue,
+		},
 	}
 	for _, tc := range tests {
 		for _, isCPGEnabled := range tc.isCompositePodGroupEnabled {
@@ -149,6 +169,12 @@ func Test_isSchedulableAfterPodAdded(t *testing.T) {
 					for _, cpg := range tc.cpgs {
 						ht.AddGenericPodGroup(logger, fwk.NewGenericCompositePodGroup(cpg))
 					}
+				}
+				if tc.pod != nil {
+					ht.AddPod(logger, tc.pod)
+				}
+				if tc.newPod != nil {
+					ht.AddPod(logger, tc.newPod)
 				}
 
 				fh, err := frameworkruntime.NewFramework(ctx, nil, nil,

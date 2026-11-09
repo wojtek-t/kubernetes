@@ -96,6 +96,12 @@ func (pl *GangScheduling) isSchedulableAfterPodAdded(logger klog.Logger, pod *v1
 	}
 	addedPodGroupKey := fwk.PodGroupKey(addedPod.Namespace, *addedPod.Spec.SchedulingGroup.PodGroupName)
 	if pl.areSameHierarchy(logger, pod.Namespace, *pod.Spec.SchedulingGroup.PodGroupName, addedPodGroupKey) {
+		if pl.hierarchyTracker != nil {
+			rootReadiness, err := pl.hierarchyTracker.FindRootGroupReadiness(addedPodGroupKey)
+			if err == nil && (rootReadiness == nil || !rootReadiness.IsReady) {
+				return fwk.QueueSkip, nil
+			}
+		}
 		return fwk.Queue, nil
 	}
 	return fwk.QueueSkip, nil
