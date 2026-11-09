@@ -2523,6 +2523,20 @@ func (f *frameworkImpl) HasPlacementScorePlugins() bool {
 	return len(f.placementScorePlugins) > 0
 }
 
+// HasOnlyDefaultPlacementScorePlugins returns true if at least one placementScore plugin is defined
+// and every placementScore plugin is either PodGroupPodsCount or NodeResourcesFit.
+func (f *frameworkImpl) HasOnlyDefaultPlacementScorePlugins() bool {
+	if len(f.placementScorePlugins) == 0 {
+		return false
+	}
+	for _, pl := range f.placementScorePlugins {
+		if pl.Name() != names.PodGroupPodsCount && pl.Name() != names.NodeResourcesFit {
+			return false
+		}
+	}
+	return true
+}
+
 // PodGroupPostFilterPlugins returns registered PodGroupPostFilter plugins.
 func (f *frameworkImpl) PodGroupPostFilterPlugins() []fwk.PodGroupPostFilterPlugin {
 	return f.podGroupPostFilterPlugins

@@ -488,11 +488,29 @@ func (p *PodGroupSchedulingAlgorithm) podGroupSchedulingPlacementAlgorithm(ctx c
 	// Only evaluate the remaining placements when the nominated one wasn't feasible.
 	if !nominatedFeasible {
 		var numPlacementsToFind int
-		placements, numPlacementsToFind = p.placementsToEvaluate(schedFwk, placements)
+		placements, numPlacementsToFind = p.placementsToEvaluate(schedFwk, placements, podGroupInfo, queuedPodGroupInfo)
+		dedupEmptyPlacements := schedFwk.HasOnlyDefaultPlacementScorePlugins()
+		totalGroupPods := len(queuedPodGroupInfo.PodInfosForGroup(podGroupInfo.GetKey()))
+		var fullEmptyCapSigs sets.Set[emptyPlacementCapSig]
+		feasiblePlacementsCount := len(successfulResults)
+
 		for _, placement := range placements {
 			if placement == nominated {
 				continue
 			}
+			var empSig emptyPlacementCapSig
+			var isEmpty bool
+			if dedupEmptyPlacements {
+				empSig, isEmpty = computeEmptyPlacementCapSig(placement)
+				if isEmpty && fullEmptyCapSigs.Has(empSig) {
+					feasiblePlacementsCount++
+					if feasiblePlacementsCount >= numPlacementsToFind {
+						break
+					}
+					continue
+				}
+			}
+
 			result := p.evaluatePlacement(ctx, schedFwk, podGroupCycleState, podGroupInfo, queuedPodGroupInfo, placement)
 			if result.status.IsError() {
 				return result
@@ -504,9 +522,16 @@ func (p *PodGroupSchedulingAlgorithm) podGroupSchedulingPlacementAlgorithm(ctx c
 
 			if result.status.IsSuccess() {
 				successfulResults[placement] = result
+				feasiblePlacementsCount++
+				if dedupEmptyPlacements && isEmpty && countScheduledPodsInResult(result) == totalGroupPods {
+					if fullEmptyCapSigs == nil {
+						fullEmptyCapSigs = sets.New[emptyPlacementCapSig]()
+					}
+					fullEmptyCapSigs.Insert(empSig)
+				}
 			}
 
-			if len(successfulResults) >= numPlacementsToFind {
+			if feasiblePlacementsCount >= numPlacementsToFind {
 				break
 			}
 		}
@@ -603,11 +628,29 @@ func (p *PodGroupSchedulingAlgorithm) compositePodGroupSchedulingPlacementAlgori
 
 	if !nominatedFeasible {
 		var numPlacementsToFind int
-		placements, numPlacementsToFind = p.placementsToEvaluate(schedFwk, placements)
+		placements, numPlacementsToFind = p.placementsToEvaluate(schedFwk, placements, podGroupInfo, root)
+		dedupEmptyPlacements := schedFwk.HasOnlyDefaultPlacementScorePlugins()
+		totalSubtreePods := len(root.PodInfosForGroup(podGroupInfo.GetKey()))
+		var fullEmptyCapSigs sets.Set[emptyPlacementCapSig]
+		feasiblePlacementsCount := len(successfulResults)
+
 		for _, placement := range placements {
 			if placement == nominated {
 				continue
 			}
+			var empSig emptyPlacementCapSig
+			var isEmpty bool
+			if dedupEmptyPlacements {
+				empSig, isEmpty = computeEmptyPlacementCapSig(placement)
+				if isEmpty && fullEmptyCapSigs.Has(empSig) {
+					feasiblePlacementsCount++
+					if feasiblePlacementsCount >= numPlacementsToFind {
+						break
+					}
+					continue
+				}
+			}
+
 			result, subtreeResult := p.evaluateCompositePlacement(ctx, schedFwk, podGroupCycleState, root, podGroupInfo, placement)
 			if result.status.IsError() {
 				// It is critical to copy the entire subtreeResult into results.
@@ -621,9 +664,16 @@ func (p *PodGroupSchedulingAlgorithm) compositePodGroupSchedulingPlacementAlgori
 			}
 			if result.status.IsSuccess() {
 				successfulResults[placement] = subtreeResult
+				feasiblePlacementsCount++
+				if dedupEmptyPlacements && isEmpty && countScheduledPodsInSubtree(podGroupInfo, subtreeResult) == totalSubtreePods {
+					if fullEmptyCapSigs == nil {
+						fullEmptyCapSigs = sets.New[emptyPlacementCapSig]()
+					}
+					fullEmptyCapSigs.Insert(empSig)
+				}
 			}
 
-			if len(successfulResults) >= numPlacementsToFind {
+			if feasiblePlacementsCount >= numPlacementsToFind {
 				break
 			}
 		}
@@ -694,7 +744,7 @@ func randShufflePlacements(placements []*fwk.Placement) {
 
 // placementsToEvaluate returns the placements in evaluation order and the number of feasible
 // placements to find before the search stops.
-func (p *PodGroupSchedulingAlgorithm) placementsToEvaluate(schedFwk framework.Framework, placements []*fwk.Placement) ([]*fwk.Placement, int) {
+func (p *PodGroupSchedulingAlgorithm) placementsToEvaluate(schedFwk framework.Framework, placements []*fwk.Placement, podGroupInfo *framework.PodGroupInfo, queuedPodGroupInfo *framework.QueuedPodGroupInfo) ([]*fwk.Placement, int) {
 	numPlacementsToFind := 1
 	if schedFwk.HasPlacementScorePlugins() {
 		numPlacementsToFind = p.numFeasiblePlacementsToFind(schedFwk.PercentageOfPlacementsToScore(), placements)
@@ -702,11 +752,141 @@ func (p *PodGroupSchedulingAlgorithm) placementsToEvaluate(schedFwk framework.Fr
 
 	// Only a subset of placements will be evaluated, so shuffle to avoid favoring the order
 	// returned by the PlacementGenerate plugin. Clone the slice to avoid mutating plugin data.
-	if p.shufflePlacements != nil && numPlacementsToFind < len(placements) {
+	if p.shufflePlacements != nil && (numPlacementsToFind < len(placements) || (schedFwk.HasOnlyDefaultPlacementScorePlugins() && len(placements) > 1)) {
 		placements = slices.Clone(placements)
 		p.shufflePlacements(placements)
+		p.partitionPlacementsByCapacity(placements, podGroupInfo, queuedPodGroupInfo)
 	}
 	return placements, numPlacementsToFind
+}
+
+type emptyPlacementCapSig struct {
+	numNodes         int
+	milliCPU         int64
+	memory           int64
+	ephemeralStorage int64
+}
+
+func computeEmptyPlacementCapSig(placement *fwk.Placement) (emptyPlacementCapSig, bool) {
+	var sig emptyPlacementCapSig
+	sig.numNodes = len(placement.Nodes)
+	for _, n := range placement.Nodes {
+		if len(n.GetPods()) > 0 {
+			return emptyPlacementCapSig{}, false
+		}
+		allocatable := n.GetAllocatable()
+		if len(allocatable.GetScalarResources()) > 0 {
+			return emptyPlacementCapSig{}, false
+		}
+		sig.milliCPU += allocatable.GetMilliCPU()
+		sig.memory += allocatable.GetMemory()
+		sig.ephemeralStorage += allocatable.GetEphemeralStorage()
+	}
+	return sig, true
+}
+
+func countScheduledPodsInResult(result *PodGroupScheduledResult) int {
+	count := 0
+	for _, pr := range result.podResults {
+		if pr.status.IsSuccess() && pr.GetNodeName() != "" {
+			count++
+		}
+	}
+	return count
+}
+
+func countScheduledPodsInSubtree(root *framework.PodGroupInfo, subtreeResults map[fwk.EntityKey]*PodGroupScheduledResult) int {
+	count := 0
+	for leafResult := range SuccessfulLeafResults(root, subtreeResults) {
+		count += countScheduledPodsInResult(leafResult)
+	}
+	return count
+}
+
+// partitionPlacementsByCapacity stably partitions placements into three tiers:
+// 1. Placements with enough aggregate CPU/memory slots to fit neededPods and at least one existing pod (preferred by MostAllocated).
+// 2. Empty placements with enough aggregate CPU/memory slots to fit neededPods.
+// 3. Placements without enough aggregate CPU/memory slots to fit neededPods.
+func (p *PodGroupSchedulingAlgorithm) partitionPlacementsByCapacity(placements []*fwk.Placement, podGroupInfo *framework.PodGroupInfo, queuedPodGroupInfo *framework.QueuedPodGroupInfo) {
+	if len(placements) <= 1 || queuedPodGroupInfo == nil || podGroupInfo == nil {
+		return
+	}
+	podInfos := queuedPodGroupInfo.PodInfosForGroup(podGroupInfo.GetKey())
+	if len(podInfos) == 0 {
+		return
+	}
+
+	minPodCPU := int64(-1)
+	minPodMem := int64(-1)
+	for _, pInfo := range podInfos {
+		var podCPU, podMem int64
+		for _, c := range pInfo.Pod.Spec.Containers {
+			podCPU += c.Resources.Requests.Cpu().MilliValue()
+			podMem += c.Resources.Requests.Memory().Value()
+		}
+		for _, ic := range pInfo.Pod.Spec.InitContainers {
+			podCPU = max(podCPU, ic.Resources.Requests.Cpu().MilliValue())
+			podMem = max(podMem, ic.Resources.Requests.Memory().Value())
+		}
+		if minPodCPU < 0 || podCPU < minPodCPU {
+			minPodCPU = podCPU
+		}
+		if minPodMem < 0 || podMem < minPodMem {
+			minPodMem = podMem
+		}
+	}
+
+	neededPods := 1
+	if podGroupInfo.GetType() == fwk.PodGroupKeyType {
+		scheduledCount := 0
+		if p.nodeInfoSnapshot != nil {
+			if pgState, err := p.nodeInfoSnapshot.PodGroupStates().Get(podGroupInfo.GetNamespace(), podGroupInfo.GetName()); err == nil {
+				scheduledCount = len(pgState.ScheduledPods())
+			}
+		}
+		neededPods = min(len(podInfos), max(1, int(podGroupInfo.GetMinCount())-scheduledCount))
+	}
+
+	var tier1, tier2, tier3 []*fwk.Placement
+	for _, placement := range placements {
+		fittingSlots := 0
+		hasExistingPods := false
+		for _, n := range placement.Nodes {
+			if len(n.GetPods()) > 0 {
+				hasExistingPods = true
+			}
+			if fittingSlots < neededPods {
+				allocatable := n.GetAllocatable()
+				requested := n.GetRequested()
+				freeCPU := allocatable.GetMilliCPU() - requested.GetMilliCPU()
+				freeMem := allocatable.GetMemory() - requested.GetMemory()
+				if freeCPU >= minPodCPU && freeMem >= minPodMem {
+					slots := neededPods
+					if minPodCPU > 0 {
+						slots = min(slots, int(freeCPU/minPodCPU))
+					}
+					if minPodMem > 0 {
+						slots = min(slots, int(freeMem/minPodMem))
+					}
+					fittingSlots += slots
+				}
+			}
+		}
+		if fittingSlots >= neededPods {
+			if hasExistingPods {
+				tier1 = append(tier1, placement)
+			} else {
+				tier2 = append(tier2, placement)
+			}
+		} else {
+			tier3 = append(tier3, placement)
+		}
+	}
+
+	out := placements[:0]
+	out = append(out, tier1...)
+	out = append(out, tier2...)
+	out = append(out, tier3...)
 }
 
 // numFeasiblePlacementsToFind returns the number of feasible placements that once found, the scheduler stops

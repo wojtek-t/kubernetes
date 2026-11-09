@@ -51,6 +51,7 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/feature"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/gangscheduling"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/names"
+	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/podgrouppodscount"
 	"k8s.io/kubernetes/pkg/scheduler/framework/plugins/queuesort"
 	frameworkruntime "k8s.io/kubernetes/pkg/scheduler/framework/runtime"
 	"k8s.io/kubernetes/pkg/scheduler/metrics"
@@ -5045,5 +5046,99 @@ func TestRunRootSchedulingAlgorithm_AssumeSubtrees(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestPodGroupSchedulingPlacementAlgorithm_EmptyPlacementDeduplicationAndTiering(t *testing.T) {
+	featuregatetesting.SetFeatureGatesDuringTest(t, utilfeature.DefaultFeatureGate, featuregatetesting.FeatureOverrides{
+		features.TopologyAwareWorkloadScheduling: true,
+		features.GenericWorkload:                 true,
+	})
+	logger, ctx := ktesting.NewTestContext(t)
+
+	// p0: insufficient CPU (1 CPU < 2 CPU required) -> Tier 3
+	// p1..p4: empty placements with 4 CPU each -> Tier 2 (identical capacity signature)
+	// p5: partially occupied placement with 4 CPU allocatable (1 CPU used, 3 CPU free >= 2 CPU required) -> Tier 1
+	nodes := []*v1.Node{
+		st.MakeNode().Name("n0").UID("n0").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "1"}).Obj(),
+		st.MakeNode().Name("n1").UID("n1").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj(),
+		st.MakeNode().Name("n2").UID("n2").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj(),
+		st.MakeNode().Name("n3").UID("n3").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj(),
+		st.MakeNode().Name("n4").UID("n4").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj(),
+		st.MakeNode().Name("n5").UID("n5").Capacity(map[v1.ResourceName]string{v1.ResourceCPU: "4"}).Obj(),
+	}
+	existingPodOnN5 := st.MakePod().Name("existing").Namespace("default").UID("existing").Node("n5").Req(map[v1.ResourceName]string{v1.ResourceCPU: "1"}).Obj()
+
+	placementPlugin := &fixedOrderPlacementPlugin{
+		placementNames: []string{"p0", "p1", "p2", "p3", "p4", "p5"},
+		nodePerPlacement: map[string]string{
+			"p0": "n0",
+			"p1": "n1",
+			"p2": "n2",
+			"p3": "n3",
+			"p4": "n4",
+			"p5": "n5",
+		},
+	}
+
+	informerFactory := informers.NewSharedInformerFactory(clientsetfake.NewClientset(), 0)
+	queue := internalqueue.NewSchedulingQueue(nil, informerFactory)
+	cache := internalcache.New(ctx, nil, true, false)
+	for _, node := range nodes {
+		cache.AddNode(logger, node)
+	}
+	if err := cache.AddPod(logger, existingPodOnN5); err != nil {
+		t.Fatalf("AddPod failed: %v", err)
+	}
+	testPodGroup := st.MakePodGroup().Name("pg").Namespace("default").Obj()
+	cache.AddGenericPodGroup(fwk.NewGenericPodGroup(testPodGroup))
+
+	snapshot := internalcache.NewEmptySnapshot()
+	if err := cache.UpdateSnapshot(logger, snapshot); err != nil {
+		t.Fatalf("UpdateSnapshot failed: %v", err)
+	}
+
+	trackingFilter := &trackingFilterPlugin{scoredNodes: sets.New[string]()}
+	registry := []tf.RegisterPluginFunc{
+		tf.RegisterPlacementGeneratePlugin(placementPlugin.Name(), func(_ context.Context, _ runtime.Object, _ fwk.Handle) (fwk.Plugin, error) {
+			return placementPlugin, nil
+		}),
+		tf.RegisterFilterPlugin(trackingFilter.Name(), func(_ context.Context, _ runtime.Object, _ fwk.Handle) (fwk.Plugin, error) {
+			return trackingFilter, nil
+		}),
+		tf.RegisterPlacementScorePlugin(podgrouppodscount.Name, func(ctx context.Context, obj runtime.Object, h fwk.Handle) (fwk.Plugin, error) {
+			return podgrouppodscount.New(ctx, obj, h, feature.Features{})
+		}, 1),
+		tf.RegisterQueueSortPlugin(queuesort.Name, queuesort.New),
+		tf.RegisterBindPlugin(defaultbinder.Name, defaultbinder.New),
+	}
+
+	schedFwk, err := tf.NewFramework(ctx, registry, "test-scheduler",
+		frameworkruntime.WithInformerFactory(informerFactory),
+		frameworkruntime.WithSnapshotSharedLister(snapshot),
+		frameworkruntime.WithPodNominator(queue),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create framework: %v", err)
+	}
+
+	podGroupAlgorithm := testPodGroupAlgorithm(t, ctx, snapshot, cache, queue,
+		WithAlgorithmPercentageOfPlacementsToScore(50),
+		// Identity shuffler so order after shuffle is p0, p1, p2, p3, p4, p5;
+		// tiering then places p5 (Tier 1) first, p1..p4 (Tier 2) next, and p0 (Tier 3) last.
+		WithShufflePlacements(func(_ []*fwk.Placement) {}),
+	)
+
+	podGroupPod := st.MakePod().Name("foo").Namespace("default").UID("foo").PodGroupName("pg").Req(map[v1.ResourceName]string{v1.ResourceCPU: "2"}).Obj()
+	result := runPlacementAlgorithm(ctx, t, podGroupAlgorithm, schedFwk, testPodGroup, nil, false, podGroupPod)
+	if !result.status.IsSuccess() {
+		t.Fatalf("Expected successful placement, got %v", result.status)
+	}
+
+	// Tier 1 (n5) and the first empty placement in Tier 2 (n1) are evaluated;
+	// remaining identical empty placements (n2, n3, n4) and Tier 3 (n0) are skipped once budget is met.
+	wantCheckedNodes := sets.New("n5", "n1")
+	if diff := cmp.Diff(sets.List(wantCheckedNodes), sets.List(trackingFilter.scoredNodes)); diff != "" {
+		t.Errorf("Unexpected checked nodes (-want,+got):\n%s", diff)
 	}
 }

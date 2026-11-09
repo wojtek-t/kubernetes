@@ -331,6 +331,10 @@ type Framework interface {
 	// HasPlacementScorePlugins returns true if at least one PlacementScore plugin is defined.
 	HasPlacementScorePlugins() bool
 
+	// HasOnlyDefaultPlacementScorePlugins returns true if at least one PlacementScore plugin is defined
+	// and every PlacementScore plugin is either PodGroupPodsCount or NodeResourcesFit.
+	HasOnlyDefaultPlacementScorePlugins() bool
+
 	// PodGroupPostFilterPlugins returns registered PodGroupPostFilter plugins.
 	PodGroupPostFilterPlugins() []fwk.PodGroupPostFilterPlugin
 
