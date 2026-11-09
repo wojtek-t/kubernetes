@@ -56,9 +56,32 @@ type OpportunisticBatch struct {
 }
 
 type batchState struct {
-	signature    fwk.PodSignature
-	sortedNodes  framework.SortedScoredNodes
-	creationTime time.Time
+	signature           fwk.PodSignature
+	sortedNodes         framework.SortedScoredNodes
+	creationTime        time.Time
+	placementGeneration uint64
+}
+
+type placementGenerationProvider interface {
+	PlacementGeneration() uint64
+}
+
+type placementNodeInfoLister interface {
+	GetNodeInPlacement(nodeName string) (fwk.NodeInfo, error)
+}
+
+func getPlacementGeneration(lister fwk.SharedLister) uint64 {
+	if pg, ok := lister.(placementGenerationProvider); ok {
+		return pg.PlacementGeneration()
+	}
+	return 0
+}
+
+func getNodeFromLister(lister fwk.NodeInfoLister, nodeName string) (fwk.NodeInfo, error) {
+	if pl, ok := lister.(placementNodeInfoLister); ok {
+		return pl.GetNodeInPlacement(nodeName)
+	}
+	return lister.Get(nodeName)
 }
 
 type schedulingCycle struct {
@@ -170,9 +193,10 @@ func (b *OpportunisticBatch) StoreScheduleResults(ctx context.Context, signature
 	// next hint.
 	if signature != nil && otherNodes != nil && otherNodes.Len() > 0 {
 		b.state = &batchState{
-			signature:    signature,
-			sortedNodes:  otherNodes,
-			creationTime: time.Now(),
+			signature:           signature,
+			sortedNodes:         otherNodes,
+			creationTime:        time.Now(),
+			placementGeneration: getPlacementGeneration(b.handle.SnapshotSharedLister()),
 		}
 		metrics.StoreScheduleResultsTotal.WithLabelValues(b.handle.ProfileName(), metrics.StoreResultStored).Inc()
 		if loggerV := logger.V(6); loggerV.Enabled() {
@@ -216,8 +240,9 @@ func (b *OpportunisticBatch) batchStateCompatible(ctx context.Context, pod *v1.P
 	// meaning we can't use the state anymore.
 	if cycleCount != b.lastCycle.cycleCount+1 {
 		// In case of PodGroup scheduling cycle, multiple pods can share the same cycle count.
-		// The batch state can be reused in that case.
-		if !b.genericWorkloadEnabled || cycleCount != b.lastCycle.cycleCount {
+		// The batch state can be reused in that case only within the same placement.
+		if !b.genericWorkloadEnabled || cycleCount != b.lastCycle.cycleCount ||
+			b.state.placementGeneration != getPlacementGeneration(b.handle.SnapshotSharedLister()) {
 			b.logUnusableState(logger, cycleCount, metrics.BatchFlushPodSkipped)
 			return false
 		}
@@ -253,7 +278,7 @@ func (b *OpportunisticBatch) batchStateCompatible(ctx context.Context, pod *v1.P
 func (b *OpportunisticBatch) refreshHintCandidates(ctx context.Context, pod *v1.Pod, cycleCount int64,
 	state fwk.CycleState) bool {
 	logger := klog.FromContext(ctx)
-	lastChosenNode, err := b.handle.SnapshotSharedLister().NodeInfos().Get(b.lastCycle.chosenNode)
+	lastChosenNode, err := getNodeFromLister(b.handle.SnapshotSharedLister().NodeInfos(), b.lastCycle.chosenNode)
 	if lastChosenNode == nil || err != nil {
 		b.logUnusableState(logger, cycleCount, metrics.BatchFlushNodeMissing, err)
 		return false
@@ -328,7 +353,7 @@ func (b *OpportunisticBatch) resolveCachedCandidates() ([]fwk.NodeInfo, []fwk.No
 	scores := make([]fwk.NodePluginScores, 0, len(cached)+1)
 	lister := b.handle.SnapshotSharedLister().NodeInfos()
 	for _, ns := range cached {
-		ni, err := lister.Get(ns.Name)
+		ni, err := getNodeFromLister(lister, ns.Name)
 		if err != nil || ni == nil {
 			return nil, nil, false
 		}

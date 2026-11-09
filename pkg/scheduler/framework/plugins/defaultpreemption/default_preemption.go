@@ -105,6 +105,7 @@ var _ fwk.PostFilterPlugin = &DefaultPreemption{}
 var _ fwk.PreEnqueuePlugin = &DefaultPreemption{}
 var _ fwk.PodGroupPostFilterPlugin = &DefaultPreemption{}
 var _ framework.RankNodesPlugin = &DefaultPreemption{}
+var _ framework.ShouldRankNodesPlugin = &DefaultPreemption{}
 var _ fwk.ReservePlugin = &DefaultPreemption{}
 
 // Name returns name of the plugin. It is used in logs, etc.
@@ -522,6 +523,12 @@ type reserveState struct {
 
 func (s *reserveState) Clone() fwk.StateData {
 	return s
+}
+
+// ShouldRankNodes reports whether RankNodes needs to run in this cycle.
+func (pl *DefaultPreemption) ShouldRankNodes(_ context.Context, cycleState fwk.CycleState, _ *v1.Pod) bool {
+	preemptionState, err := preemption.GetPodGroupPreemptionState(cycleState)
+	return err != nil || preemptionState != nil
 }
 
 // RankNodes orders candidate nodes by preemption cost during Workload-Aware Preemption scheduling cycles.

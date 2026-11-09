@@ -179,6 +179,13 @@ type RankNodesPlugin interface {
 	RankNodes(ctx context.Context, state fwk.CycleState, pod *v1.Pod, nodes []fwk.NodeInfo) ([]NodeWithRank, *fwk.Status)
 }
 
+// ShouldRankNodesPlugin is an optional interface for RankNodesPlugin implementations
+// that can determine from CycleState alone whether node ranking is active for the cycle,
+// avoiding O(N) node slice rotation when RankNodes would be skipped.
+type ShouldRankNodesPlugin interface {
+	ShouldRankNodes(ctx context.Context, state fwk.CycleState, pod *v1.Pod) bool
+}
+
 // Framework manages the set of plugins in use by the scheduling framework.
 // Configured plugins are called at specified points in a scheduling context.
 type Framework interface {
@@ -199,6 +206,10 @@ type Framework interface {
 	// and gang scheduling optimizations.
 	// See https://github.com/kubernetes/enhancements/tree/master/keps/sig-scheduling/5598-opportunistic-batching
 	SignPod(ctx context.Context, pod *v1.Pod) fwk.PodSignature
+
+	// ShouldRunRankNodesPlugins returns true if at least one configured RankNodes plugin
+	// is active for the given cycle state and pod.
+	ShouldRunRankNodesPlugins(ctx context.Context, state fwk.CycleState, pod *v1.Pod) bool
 
 	// RunRankNodesPlugins runs the set of configured RankNodes plugins.
 	// It returns the ranked nodes from the first plugin that returns a Success status,

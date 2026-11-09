@@ -66,6 +66,13 @@ func numWorkersForChunkSize(parallelism, pieces, chunkSize int) int {
 // Until is a wrapper around workqueue.ParallelizeUntil to use in scheduling algorithms.
 // A given operation will be a label that is recorded in the goroutine metric.
 func (p Parallelizer) Until(ctx context.Context, pieces int, doWorkPiece workqueue.DoWorkPieceFunc, operation string) {
+	if pieces <= 0 || ctx.Err() != nil {
+		return
+	}
+	if pieces == 1 {
+		doWorkPiece(0)
+		return
+	}
 	chunkSize := chunkSizeFor(pieces, p.parallelism)
 	workers := numWorkersForChunkSize(p.parallelism, pieces, chunkSize)
 

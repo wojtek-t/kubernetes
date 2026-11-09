@@ -982,6 +982,18 @@ func (f *frameworkImpl) SignPod(ctx context.Context, pod *v1.Pod) fwk.PodSignatu
 	return sigBytes
 }
 
+// ShouldRunRankNodesPlugins returns true if at least one configured RankNodes plugin
+// is active for the given cycle state and pod.
+func (f *frameworkImpl) ShouldRunRankNodesPlugins(ctx context.Context, state fwk.CycleState, pod *v1.Pod) bool {
+	for _, pl := range f.rankNodesPlugins {
+		if sr, ok := pl.(framework.ShouldRankNodesPlugin); ok && !sr.ShouldRankNodes(ctx, state, pod) {
+			continue
+		}
+		return true
+	}
+	return false
+}
+
 // RunRankNodesPlugins runs the set of configured RankNodes plugins.
 // It returns the ranked nodes from the first plugin that returns a Success status,
 // or a non-success Status if any plugin returns a status other than Success or Skip.

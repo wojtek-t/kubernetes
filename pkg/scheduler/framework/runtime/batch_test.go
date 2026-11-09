@@ -38,6 +38,7 @@ import (
 	fwk "k8s.io/kube-scheduler/framework"
 	"k8s.io/kubernetes/pkg/features"
 	"k8s.io/kubernetes/pkg/scheduler/apis/config"
+	"k8s.io/kubernetes/pkg/scheduler/backend/cache"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 	"k8s.io/kubernetes/pkg/scheduler/metrics"
 )
@@ -1134,5 +1135,67 @@ func TestRunPodGroupPostFilterPluginsBatching(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestBatchPlacementIsolation(t *testing.T) {
+	_, ctx := ktesting.NewTestContext(t)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	pod1 := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "pod1", UID: types.UID(blockingPodID("1"))},
+		Spec:       v1.PodSpec{NodeName: "n3"},
+	}
+	pod2 := &v1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod2", UID: types.UID(blockingPodID("2"))}}
+	n1 := &v1.Node{ObjectMeta: metav1.ObjectMeta{Name: "n1", UID: "n1"}}
+	n2 := &v1.Node{ObjectMeta: metav1.ObjectMeta{Name: "n2", UID: "n2"}}
+	n3 := &v1.Node{ObjectMeta: metav1.ObjectMeta{Name: "n3", UID: "n3"}}
+
+	snapshot := cache.NewSnapshot([]*v1.Pod{pod1}, []*v1.Node{n1, n2, n3})
+	r := Registry{
+		"batchTest":     newBatchTestPlugin,
+		queueSortPlugin: newQueueSortPlugin,
+		bindPlugin:      newBindPlugin,
+	}
+	profile := config.KubeSchedulerProfile{
+		Plugins: &config.Plugins{
+			QueueSort: config.PluginSet{Enabled: []config.Plugin{{Name: queueSortPlugin}}},
+			Bind:      config.PluginSet{Enabled: []config.Plugin{{Name: bindPlugin}}},
+			Filter:    config.PluginSet{Enabled: []config.Plugin{{Name: "batchTest"}}},
+		},
+	}
+	testFwk, err := NewFramework(ctx, r, &profile, WithSnapshotSharedLister(snapshot))
+	if err != nil {
+		t.Fatalf("Failed to create framework: %v", err)
+	}
+	defer func() { _ = testFwk.Close() }()
+
+	n1Info, _ := snapshot.Get("n1")
+	n2Info, _ := snapshot.Get("n2")
+	n3Info, _ := snapshot.Get("n3")
+
+	if err := snapshot.AssumePlacement(&fwk.Placement{Name: "p1", Nodes: []fwk.NodeInfo{n1Info, n3Info}}); err != nil {
+		t.Fatalf("AssumePlacement(p1) failed: %v", err)
+	}
+
+	batch := newOpportunisticBatch(testFwk, true, time.Minute)
+	sig := fwk.PodSignature("sig")
+	state := framework.NewCycleState()
+
+	batch.StoreScheduleResults(ctx, sig, "", "n3", newTestNodes([]string{"n1"}), 1)
+
+	// Within the same placement p1 and same cycleCount 1, pod2 gets hint "n1".
+	if hint := batch.GetNodeHint(ctx, pod2, sig, state, 1); hint != "n1" {
+		t.Fatalf("expected hint %q in same placement, got %q", "n1", hint)
+	}
+
+	// Re-store batch state in p1, then switch to placement p2 within the same cycleCount 1.
+	batch.StoreScheduleResults(ctx, sig, "", "n3", newTestNodes([]string{"n1"}), 1)
+	if err := snapshot.AssumePlacement(&fwk.Placement{Name: "p2", Nodes: []fwk.NodeInfo{n2Info}}); err != nil {
+		t.Fatalf("AssumePlacement(p2) failed: %v", err)
+	}
+	if hint := batch.GetNodeHint(ctx, pod2, sig, state, 1); hint != "" {
+		t.Fatalf("expected empty hint after switching placement in same cycleCount, got %q", hint)
 	}
 }

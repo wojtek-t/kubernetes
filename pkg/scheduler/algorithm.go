@@ -434,11 +434,13 @@ func (a *SchedulingAlgorithm) findNodesThatPassFilters(
 	}
 
 	var rankedNodes []framework.NodeWithRank
-	if allowRankNodes && state.IsPodGroupSchedulingCycle() && numAllNodes > 1 {
-		// TODO(#142718): Avoid O(N) allocation of rotatedNodes when RankNodes is skipped.
-		rotatedNodes := make([]fwk.NodeInfo, numAllNodes)
-		for i := range nodes {
-			rotatedNodes[i] = nodes[(a.nextStartNodeIndex+i)%numAllNodes]
+	if allowRankNodes && state.IsPodGroupSchedulingCycle() && numAllNodes > 1 && schedFramework.ShouldRunRankNodesPlugins(ctx, state, pod) {
+		rotatedNodes := nodes
+		if a.nextStartNodeIndex%numAllNodes != 0 {
+			rotatedNodes = make([]fwk.NodeInfo, numAllNodes)
+			for i := range nodes {
+				rotatedNodes[i] = nodes[(a.nextStartNodeIndex+i)%numAllNodes]
+			}
 		}
 		var status *fwk.Status
 		rankedNodes, status = schedFramework.RunRankNodesPlugins(ctx, state, pod, rotatedNodes)

@@ -118,6 +118,10 @@ type Snapshot struct {
 	// It should only be set in the pod group scheduling cycle, when checking if pod group can be scheduled within the placement.
 	// This field should be cleared once the pod group has been checked for the placement.
 	placementNodes *placementNodes
+	// placementGeneration increments whenever the active placement changes so
+	// opportunistic batching can invalidate node hints across placement transitions
+	// within a single pod group scheduling cycle.
+	placementGeneration uint64
 	// genericWorkloadEnabled stores the GenericWorkload feature gate value.
 	genericWorkloadEnabled bool
 	// snapshotBackup is used for storing original
@@ -732,6 +736,13 @@ func (s *Snapshot) SavePlacement() *placementNodes {
 // RestorePlacement restores a placement state previously captured by SavePlacement.
 func (s *Snapshot) RestorePlacement(saved *placementNodes) {
 	s.placementNodes = saved
+	s.placementGeneration++
+}
+
+// PlacementGeneration returns a monotonic counter that increments whenever
+// the assumed placement changes.
+func (s *Snapshot) PlacementGeneration() uint64 {
+	return s.placementGeneration
 }
 
 // AssumePlacement sets placement context in the snapshot.
@@ -764,6 +775,7 @@ func (s *Snapshot) AssumePlacement(placement *fwk.Placement) error {
 	s.placementNodes = &placementNodes{
 		placement: placement,
 	}
+	s.placementGeneration++
 	return nil
 }
 
@@ -772,6 +784,7 @@ func (s *Snapshot) AssumePlacement(placement *fwk.Placement) error {
 // This function is not thread safe, so it should be executed when no other routines can write/read from the snapshot.
 func (s *Snapshot) ForgetPlacement() {
 	s.placementNodes = nil
+	s.placementGeneration++
 }
 
 // GetNodeInPlacement returns the NodeInfo of the given node name within the current placement.
